@@ -267,6 +267,16 @@ class MongoDB_login(object):
         self.timeout = timeout
 
     def login(self, ipaddress, port, user_passwd_pair_list):
+        try:
+            conn = pymongo.MongoClient(ipaddress, port)
+            dbname = conn.list_database_names()
+            log_success("MongoDB", ipaddress, port, None)
+            conn.close()
+            return
+        except Exception as E:
+            logger.debug(E)
+        finally:
+            pass
         for user_passwd_pair in user_passwd_pair_list:
             try:
                 client = pymongo.MongoClient(

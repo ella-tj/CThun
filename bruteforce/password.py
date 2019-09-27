@@ -118,7 +118,7 @@ class Password_total(object):
                              "12345", "1234", "root", "123", "qwerty", "test", "1q2w3e4r", "1qaz2wsx", "qazwsx",
                              "123qwe", "123qaz", "0000", "oracle", "1234567", "123456qwerty", "password123",
                              "12345678", "1q2w3e", "abc123", "okmnji", "test123", "123456789", "q1w2e3r4", "user",
-                             "web"],
+                             "web", "foobared"],
             },
             "SMB": {
                 "user": ["administrator", "admin", "test", "user", "manager", "webadmin", "guest", "db2admin"],
@@ -404,5 +404,6 @@ class Password_total(object):
         old_len = len(VNC_user_passwd_pair_list)
         self.VNC_user_passwd_pair_list = self.de_duplication_by_password(VNC_user_passwd_pair_list)
         logger.info(
-            "VNC_user_passwd_pair_list length: {} after de_duplication: {}".format(old_len,len(self.VNC_user_passwd_pair_list)))
+            "VNC_user_passwd_pair_list length: {} after de_duplication: {}".format(old_len,
+                                                                                   len(self.VNC_user_passwd_pair_list)))
         logger.info("------------------------------------")
