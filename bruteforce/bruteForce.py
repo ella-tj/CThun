@@ -46,6 +46,7 @@ class SSH_login(object):
     def login(self, ipaddress, port, user_passwd_pair_list):
         parallel_logger = logging.getLogger("parallel")
         parallel_logger.setLevel('CRITICAL')
+        parallel_logger.disabled = True
         for user_passwd_pair in user_passwd_pair_list:
             try:
                 client = ParallelSSHClient(hosts=[ipaddress], port=port, user=user_passwd_pair[0],
