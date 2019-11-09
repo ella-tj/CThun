@@ -16,6 +16,8 @@ from portscan.RE_DATA import *
 SOCKET_READ_BUFFERSIZE = 1024  # SOCKET DEFAULT READ BUFFER
 
 
+
+
 def dqtoi(dq):
     """ip地址转数字."""
     octets = dq.split(".")
@@ -380,13 +382,15 @@ class GeventScanner(object):
         start = dqtoi(startip)
         stop = dqtoi(stopip)
         tasks = []
-        # pool = Pool(self.maxSocketCount)
         pool = pool
         for host in range(start, stop + 1):
             for port in port_list:
                 ipaddress = itodq(host)
                 task = pool.spawn(self.async_scan, ipaddress, port)
                 tasks.append(task)
+                if len(tasks) >= 2000:
+                    gevent.joinall(tasks)
+                    tasks = []
         gevent.joinall(tasks)
         return self.resultList
 

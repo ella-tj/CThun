@@ -44,13 +44,25 @@ class SSH_login(object):
         self.timeout = timeout
 
     def login(self, ipaddress, port, user_passwd_pair_list):
-        parallel_logger = logging.getLogger("parallel")
-        parallel_logger.setLevel('CRITICAL')
-        parallel_logger.disabled = True
+        for user_passwd_pair in user_passwd_pair_list:
+            try:
+
+                client = ParallelSSHClient(hosts=[ipaddress], port=port, user=user_passwd_pair[0],
+                                           password=user_passwd_pair[1], num_retries=0, timeout=self.timeout)
+                output = client.run_command('whoami', timeout=self.timeout)
+                log_success("SSH", ipaddress, port, user_passwd_pair)
+            except Exception as E:
+                logger.debug('AuthenticationException: ssh')
+                continue
+            finally:
+                pass
+
+    def login_with_pool(self, ipaddress, port, user_passwd_pair_list, pool_size=10):
         for user_passwd_pair in user_passwd_pair_list:
             try:
                 client = ParallelSSHClient(hosts=[ipaddress], port=port, user=user_passwd_pair[0],
-                                           password=user_passwd_pair[1], num_retries=0, timeout=self.timeout)
+                                           password=user_passwd_pair[1], num_retries=0, timeout=self.timeout,
+                                           pool_size=pool_size)
                 output = client.run_command('whoami', timeout=self.timeout)
                 log_success("SSH", ipaddress, port, user_passwd_pair)
             except Exception as E:
@@ -551,9 +563,10 @@ def bruteforce_interface(portScan_result_list, timeout, no_default_dict, proto_l
             if "ms-wbt-server" in service and "rdp" in proto_list:
                 task = pool.spawn(rdp_login.login, ipaddress, port, password_total.RDP_user_passwd_pair_list)
                 tasks.append(task)
-        if "ssh" in service and "ssh" in proto_list:
-            task = pool.spawn(ssh_login.login, ipaddress, port, password_total.SSH_user_passwd_pair_list)
-            tasks.append(task)
+
+        if "ssh" in service and "ssh" in proto_list:  # 原生支持协程,直接扫描
+            ssh_login.login_with_pool(ipaddress, port, password_total.SSH_user_passwd_pair_list, pool.size)
+
         if "mongodb" in service and "mongodb" in proto_list:
             task = pool.spawn(mongo_login.login, ipaddress, port, password_total.MongoDB_user_passwd_pair_list)
             tasks.append(task)

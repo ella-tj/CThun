@@ -9,11 +9,26 @@ import argparse
 import datetime
 import sys
 import time
+from itertools import groupby
 
 from gevent.pool import Pool
 
 from lib.config import logger
 from portscan.RE_DATA import TOP_1000_PORTS_WITH_ORDER
+
+
+def group_numbers(lst):
+    templist = []
+    fun = lambda x: x[1] - x[0]
+    for k, g in groupby(enumerate(lst), fun):
+        l1 = [j for i, j in g]
+        if len(l1) > 1:
+            scop = str(min(l1)) + '-' + str(max(l1))
+        else:
+            scop = l1[0]
+        templist.append(scop)
+    return templist
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -63,9 +78,13 @@ if __name__ == '__main__':
                         type=bool,
                         help="do not use default user/password dict,only user.txt,password.txt",
                         )
-
+    parser.add_argument('-debug', '--debug', default=False,
+                        nargs='?',
+                        metavar="true",
+                        type=bool,
+                        help="Get error log in debug.log",
+                        )
     args = parser.parse_args()
-
     startip = args.s
     stopip = args.e
 
@@ -116,12 +135,26 @@ if __name__ == '__main__':
         top_ports_count = 1000
     timeout = args.sockettimeout
 
+    showports = group_numbers(top_port_list)
+    print(
+        "[!] Progrem Start ! All infomation will write to result.log, You can run this progrem on blackground next time. HAPPY HACKING！")
+
+    debug_flag = args.debug
+    if debug_flag is not False:
+        debug_flag = True
+
+    if debug_flag is True:
+        fullname = "debug.log"
+        sys.stderr = open(fullname, "w+")
+    else:
+        sys.stderr = None
+
     logger.info("----------------- Progrem Start ---------------------")
     logger.info(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     logger.info("----------------- PortScan Start --------------------")
     logger.info("StartIP: {}\nEndIP: {}\nSocketTimeout: {}\nMaxsocket: {}\nPorts: {}".format(startip, stopip, timeout,
                                                                                              max_socket_count,
-                                                                                             top_port_list))
+                                                                                             showports))
     pool = Pool(max_socket_count)
     t1 = time.time()
     from portscan.portScan import GeventScanner
