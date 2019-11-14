@@ -12,6 +12,7 @@ import time
 from itertools import groupby
 
 from gevent.pool import Pool
+from ipaddr import summarize_address_range, IPv4Network, IPv4Address
 
 from lib.config import logger
 from portscan.RE_DATA import TOP_1000_PORTS_WITH_ORDER
@@ -30,6 +31,32 @@ def group_numbers(lst):
     return templist
 
 
+def get_ipaddresses(raw_lines):
+    ipaddress_list = []
+    for line in raw_lines:
+        if '-' in line:
+            try:
+                startip = line.split("-")[0]
+                endip = line.split("-")[1]
+                ipnetwork_list = summarize_address_range(IPv4Address(startip), IPv4Address(endip))
+                for ipnetwork in ipnetwork_list:
+                    for ip in ipnetwork:
+                        if ip.compressed not in ipaddress_list:
+                            ipaddress_list.append(ip.compressed)
+            except Exception as E:
+                print(E)
+        else:
+            try:
+                ipnetwork = IPv4Network(line)
+                for ip in ipnetwork:
+                    if ip.compressed not in ipaddress_list:
+                        ipaddress_list.append(ip.compressed)
+            except Exception as E:
+                print(E)
+
+    return ipaddress_list
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="This script can scan port&service like nmap and bruteforce like hydra."
@@ -37,8 +64,12 @@ if __name__ == '__main__':
                     "progrem has default user/password dict inside,"
                     "you can add extra users in user.txt and extra password in password.ext in same folder"
                     "(one line one word)")
-    parser.add_argument('-s', metavar='startip', help="Start IPaddress(e.g. '192.172.1.1')", required=True)
-    parser.add_argument('-e', metavar='endip', help="End IPaddress(e.g. '192.172.1.255')", required=True)
+    parser.add_argument('-ips', metavar='ipaddress',
+                        help="Scan ipaddresses(e.g. '192.172.1.1,192.172.1.1/24,192.172.1.1-192.172.1.10')",
+                        required=False)
+    parser.add_argument('-ipf', metavar='ip.txt',
+                        help="File store ipaddress,one ip one line,you can use 192.172.1.1\n192.172.1.1/24\n192.172.1.1-192.172.1.10\n(do not use ,)",
+                        required=False)
     parser.add_argument('-p', '--ports',
                         default=[],
                         metavar='N,N',
@@ -85,12 +116,34 @@ if __name__ == '__main__':
                         help="Get error log in debug.log",
                         )
     args = parser.parse_args()
-    startip = args.s
-    stopip = args.e
+    ips = args.ips
+    ipf = args.ipf
+    raw_lines = []
 
-    # 端口扫描
-    if startip is None or stopip is None:
-        print("[x] Please set Start IPaddress,End IPaddress.")
+    if ips is None and ipf is None:
+        print("[x] Please set ips or ipf.")
+        parser.print_help()
+        sys.exit(0)
+
+    if ips is not None:
+        try:
+            input_lines = ips.split(",")
+            raw_lines.extend(input_lines)
+        except Exception as E:
+            print(E)
+    if ipf is not None:
+        try:
+            with open(ipf, "rb") as f:
+                file_lines = f.readlines()
+                for line in file_lines:
+                    raw_lines.append(line.strip())
+        except Exception as E:
+            print(E)
+
+    ip_list = get_ipaddresses(raw_lines)
+
+    if len(ip_list) <= 0:
+        print("[x] Can not get ipaddress for -ips or -ipf.")
         parser.print_help()
         sys.exit(0)
 
@@ -137,7 +190,7 @@ if __name__ == '__main__':
 
     showports = group_numbers(top_port_list)
     print(
-        "[!] Progrem Start ! All infomation will write to result.log, You can run this progrem on blackground next time. HAPPY HACKING！")
+        "[!] Progrem Start ! All infomation will write to result.log, You can run this progrem on blackground next time. HAPPY HACKING!")
 
     debug_flag = args.debug
     if debug_flag is not False:
@@ -152,15 +205,17 @@ if __name__ == '__main__':
     logger.info("----------------- Progrem Start ---------------------")
     logger.info(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     logger.info("----------------- PortScan Start --------------------")
-    logger.info("StartIP: {}\nEndIP: {}\nSocketTimeout: {}\nMaxsocket: {}\nPorts: {}".format(startip, stopip, timeout,
-                                                                                             max_socket_count,
-                                                                                             showports))
+    logger.info(
+        "\nIP list: {}\nIP count: {}\nSocketTimeout: {}\nMaxsocket: {}\nPorts: {}".format(raw_lines, len(ip_list),
+                                                                                          timeout,
+                                                                                          max_socket_count,
+                                                                                          showports))
     pool = Pool(max_socket_count)
     t1 = time.time()
     from portscan.portScan import GeventScanner
 
     geventScanner = GeventScanner(max_socket_count=max_socket_count, timeout=timeout)
-    portScan_result_list = geventScanner.aysnc_main(startip, stopip, top_port_list, pool)
+    portScan_result_list = geventScanner.aysnc_main(ip_list, top_port_list, pool)
     t2 = time.time()
 
     logger.info("PortScan finish,time use : {}s".format(t2 - t1))

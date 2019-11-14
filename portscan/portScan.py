@@ -17,29 +17,6 @@ SOCKET_READ_BUFFERSIZE = 1024  # SOCKET DEFAULT READ BUFFER
 
 
 
-
-def dqtoi(dq):
-    """ip地址转数字."""
-    octets = dq.split(".")
-    if len(octets) != 4:
-        raise ValueError
-    for octet in octets:
-        if int(octet) > 255:
-            raise ValueError
-    return (int(octets[0]) << 24) + \
-           (int(octets[1]) << 16) + \
-           (int(octets[2]) << 8) + \
-           (int(octets[3]))
-
-
-def itodq(intval):
-    """数字转ip地址."""
-    return "%u.%u.%u.%u" % ((intval >> 24) & 0x000000ff,
-                            ((intval & 0x00ff0000) >> 16),
-                            ((intval & 0x0000ff00) >> 8),
-                            (intval & 0x000000ff))
-
-
 def compile_pattern(allprobes):
     """编译re的正则表达式"""
     for probe in allprobes:
@@ -378,14 +355,11 @@ class GeventScanner(object):
             sd.close()
 
     # gevent 扫描
-    def aysnc_main(self, startip, stopip, port_list, pool):
-        start = dqtoi(startip)
-        stop = dqtoi(stopip)
+    def aysnc_main(self, ip_list, port_list, pool):
         tasks = []
         pool = pool
-        for host in range(start, stop + 1):
+        for ipaddress in ip_list:
             for port in port_list:
-                ipaddress = itodq(host)
                 task = pool.spawn(self.async_scan, ipaddress, port)
                 tasks.append(task)
                 if len(tasks) >= 2000:
@@ -401,23 +375,23 @@ class GeventScanner(object):
         else:
             versioninfo = ""
             try:
-                versioninfo = versioninfo+data.get("versioninfo").get("vendorproductname")[0] + "  "
+                versioninfo = versioninfo + data.get("versioninfo").get("vendorproductname")[0] + "  "
             except Exception as E:
                 pass
             try:
-                versioninfo = versioninfo+data.get("versioninfo").get("version")[0] + "  "
+                versioninfo = versioninfo + data.get("versioninfo").get("version")[0] + "  "
             except Exception as E:
                 pass
             try:
-                versioninfo = versioninfo+data.get("versioninfo").get("operatingsystem")[0] + "  "
+                versioninfo = versioninfo + data.get("versioninfo").get("operatingsystem")[0] + "  "
             except Exception as E:
                 pass
             try:
-                versioninfo = versioninfo+data.get("versioninfo").get("info")[0] + "  "
+                versioninfo = versioninfo + data.get("versioninfo").get("info")[0] + "  "
             except Exception as E:
                 pass
             try:
-                versioninfo = versioninfo+data.get("versioninfo").get("hostname")[0] + "  "
+                versioninfo = versioninfo + data.get("versioninfo").get("hostname")[0] + "  "
             except Exception as E:
                 pass
 
