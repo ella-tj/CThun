@@ -91,6 +91,11 @@ if __name__ == '__main__':
                         help='Max sockets(100-1000),default is 1000',
                         default=1000,
                         type=int)
+    parser.add_argument('-rt', '--retry',
+                        metavar='N',
+                        help='Retry count if connet port timeout(1-3),default is 2',
+                        default=2,
+                        type=int)
     parser.add_argument('-hs', '--http_scan', default=False,
                         nargs='?',
                         metavar="true",
@@ -153,6 +158,13 @@ if __name__ == '__main__':
     elif top_ports_count >= 1000:
         top_ports_count = 1000
 
+    retry = args.retry
+    if retry <= 1:
+        top_ports_count = 1
+    elif retry >= 3:
+        retry = 3
+
+
     port_list = []
     ports_str = args.ports
     for one in ports_str:
@@ -187,10 +199,9 @@ if __name__ == '__main__':
     elif max_socket_count >= 1000:
         top_ports_count = 1000
     timeout = args.sockettimeout
-
+    print("[!] Progrem Start ! All infomation will write to result.log,"
+          " You can run this progrem on blackground next time. HAPPY HACKING!")
     showports = group_numbers(top_port_list)
-    print(
-        "[!] Progrem Start ! All infomation will write to result.log, You can run this progrem on blackground next time. HAPPY HACKING!")
 
     debug_flag = args.debug
     if debug_flag is not False:
@@ -214,7 +225,7 @@ if __name__ == '__main__':
     t1 = time.time()
     from portscan.portScan import GeventScanner
 
-    geventScanner = GeventScanner(max_socket_count=max_socket_count, timeout=timeout)
+    geventScanner = GeventScanner(max_socket_count=max_socket_count, timeout=timeout,retry=retry)
     portScan_result_list = geventScanner.aysnc_main(ip_list, top_port_list, pool)
     t2 = time.time()
 

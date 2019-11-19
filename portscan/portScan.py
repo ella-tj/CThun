@@ -16,7 +16,6 @@ from portscan.RE_DATA import *
 SOCKET_READ_BUFFERSIZE = 1024  # SOCKET DEFAULT READ BUFFER
 
 
-
 def compile_pattern(allprobes):
     """编译re的正则表达式"""
     for probe in allprobes:
@@ -46,7 +45,7 @@ def compile_pattern(allprobes):
 class ServiceScan(object):
 
     def __init__(self, timeout):
-        self.sd = None
+
         self.allprobes = compile_pattern(json.loads(zlib.decompress(base64.b64decode(ALLPROBES))))
         self.all_guess_services = json.loads(zlib.decompress(base64.b64decode(ALL_GUESS_SERVICE)))
         self.timeout = timeout
@@ -330,30 +329,37 @@ class ServiceScan(object):
 
 
 class GeventScanner(object):
-    def __init__(self, max_socket_count, timeout=0.5):
+    def __init__(self, max_socket_count, timeout=0.5, retry=3):
         self.serviceScan = ServiceScan(timeout)
         self.maxSocketCount = max_socket_count
         self.timeout = timeout
         self.resultList = []
+        self.retry = retry
 
     def async_scan(self, ipaddress, port):
         ipaddress = ipaddress
         port = port
         sd = socket.socket(AF_INET, SOCK_STREAM)
-        try:
-            sd.settimeout(self.timeout)
-            sd.connect((ipaddress, port))
-            data = self.serviceScan.scan(ipaddress, port, 'tcp')
-            if data.get("error") is None:
-                self.format_log(ipaddress, port, data)
-                self.resultList.append(
-                    {"ipaddress": ipaddress, "port": port, "service": data.get("service"), "data": data})
-            sd.close()
-        except Exception as E:
-            pass
-        finally:
-            sd.close()
-
+        open_flag = False
+        for i in range(self.retry):
+            try:
+                sd.settimeout(self.timeout)
+                sd.connect((ipaddress, port))
+                open_flag = True
+                sd.close()
+            except Exception as E:
+                continue
+            finally:
+                sd.close()
+        if open_flag:
+            for i in range(self.retry):
+                data = self.serviceScan.scan(ipaddress, port, 'tcp')
+                if data.get("error") is None:
+                    self.format_log(ipaddress, port, data)
+                    self.resultList.append({"ipaddress": ipaddress, "port": port, "service": data.get("service"), "data": data})
+                    break
+                else:
+                    continue
     # gevent 扫描
     def aysnc_main(self, ip_list, port_list, pool):
         tasks = []
