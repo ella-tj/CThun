@@ -24,7 +24,6 @@ a = Analysis(['cthun.py'],
              runtime_hooks=[],
              excludes=[
              "_tkinter",
-             "distutils",
              "six",
              "setuptools",
              "multiprocessing",

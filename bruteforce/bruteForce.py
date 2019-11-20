@@ -560,7 +560,7 @@ def bruteforce_interface(portScan_result_list, timeout, no_default_dict, proto_l
 
         # 快的扫描
         if SSL_FLAG:
-            if "ms-wbt-server" in service and "rdp" in proto_list:
+            if ("ms-wbt-server" in service or "rdp" in service) and "rdp" in proto_list and SSL_FLAG:
                 task = pool.spawn(rdp_login.login, ipaddress, port, password_total.RDP_user_passwd_pair_list)
                 tasks.append(task)
 

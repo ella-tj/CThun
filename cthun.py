@@ -57,6 +57,50 @@ def get_ipaddresses(raw_lines):
     return ipaddress_list
 
 
+def get_one_result(raw_line, proto):
+    try:
+        proto_default_port = {'ftp': 21, 'ssh': 22, 'rdp': 3389, 'smb': 445, 'mysql': 3306, 'mssql': 1433,
+                              'redis': 6379, 'mongodb': 27017, 'memcached': 11211,
+                              'postgresql': 5432, 'vnc': 5901}
+        if len(raw_line.split(":")) < 2:
+            # 没有填写端口,使用默认端口
+            port = proto_default_port.get(proto)
+        else:
+            port = int(raw_line.split(":")[1])
+        line = raw_line.split(":")[0]
+    except Exception as E:
+        print(E)
+        return []
+    result = []
+    ipaddress_list = []
+    if '-' in line:
+        try:
+            startip = line.split("-")[0]
+            endip = line.split("-")[1]
+            ipnetwork_list = summarize_address_range(IPv4Address(startip), IPv4Address(endip))
+            for ipnetwork in ipnetwork_list:
+                for ip in ipnetwork:
+                    if ip.compressed not in ipaddress_list:
+                        ipaddress_list.append(ip.compressed)
+        except Exception as E:
+            print(E)
+    else:
+        try:
+            ipnetwork = IPv4Network(line)
+            for ip in ipnetwork:
+                if ip.compressed not in ipaddress_list:
+                    ipaddress_list.append(ip.compressed)
+        except Exception as E:
+            print(E)
+    # service = one_portscan_result.get("service").lower()
+    # ipaddress = one_portscan_result.get("ipaddress")
+    # port = one_portscan_result.get("port")
+    # 读取mysql.txt,redis.txt中的ip地址
+    for ip in ipaddress_list:
+        result.append({"ipaddress": ip, "port": port, "service": proto})
+    return result
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="This script can scan port&service like nmap and bruteforce like hydra."
@@ -89,7 +133,7 @@ if __name__ == '__main__':
     parser.add_argument('-ms', '--maxsocket',
                         metavar='N',
                         help='Max sockets(100-1000),default is 1000',
-                        default=1000,
+                        default=300,
                         type=int)
     parser.add_argument('-rt', '--retry',
                         metavar='N',
@@ -125,10 +169,7 @@ if __name__ == '__main__':
     ipf = args.ipf
     raw_lines = []
 
-    if ips is None and ipf is None:
-        print("[x] Please set ips or ipf.")
-        parser.print_help()
-        sys.exit(0)
+
 
     if ips is not None:
         try:
@@ -148,9 +189,8 @@ if __name__ == '__main__':
     ip_list = get_ipaddresses(raw_lines)
 
     if len(ip_list) <= 0:
-        print("[x] Can not get ipaddress for -ips or -ipf.")
-        parser.print_help()
-        sys.exit(0)
+        print("[!] Can not get ipaddress for -ips or -ipf.")
+        print("[!] port scan will pass.")
 
     top_ports_count = args.topports
     if top_ports_count <= 0:
@@ -163,7 +203,6 @@ if __name__ == '__main__':
         top_ports_count = 1
     elif retry >= 3:
         retry = 3
-
 
     port_list = []
     ports_str = args.ports
@@ -188,9 +227,8 @@ if __name__ == '__main__':
             top_port_list.append(i)
 
     if len(top_port_list) <= 0:
-        print("[x] Please set ports or topports.")
-        parser.print_help()
-        sys.exit(0)
+        print("[!] Can not get ports from -p and -tp.")
+        print("[!] port scan will pass.")
 
     max_socket_count = args.maxsocket
 
@@ -225,7 +263,7 @@ if __name__ == '__main__':
     t1 = time.time()
     from portscan.portScan import GeventScanner
 
-    geventScanner = GeventScanner(max_socket_count=max_socket_count, timeout=timeout,retry=retry)
+    geventScanner = GeventScanner(max_socket_count=max_socket_count, timeout=timeout, retry=retry)
     portScan_result_list = geventScanner.aysnc_main(ip_list, top_port_list, pool)
     t2 = time.time()
 
@@ -260,6 +298,16 @@ if __name__ == '__main__':
 
     if len(proto_list) > 0:
         from bruteforce.bruteForce import bruteforce_interface
+        for prote in proto_list:
+            filename = "{}.txt".format(prote)
+            try:
+                with open(filename, "rb") as f:
+                    file_lines = f.readlines()
+                    for line in file_lines:
+                        manly_input_result = get_one_result(line.strip(), prote)
+                        portScan_result_list.extend(manly_input_result)
+            except Exception as E:
+                pass
 
         t2 = time.time()
         logger.info("----------------- BruteForce Start -------------------")
