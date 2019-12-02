@@ -134,7 +134,6 @@ class ServiceScan(object):
             data = client.recv(SOCKET_READ_BUFFERSIZE)
             client.close()
         except Exception as err:
-
             return None
         finally:
             client.close()
@@ -329,7 +328,7 @@ class ServiceScan(object):
 
 
 class GeventScanner(object):
-    def __init__(self, max_socket_count, timeout=0.5, retry=3):
+    def __init__(self, max_socket_count=300, timeout=0.5, retry=3):
         self.serviceScan = ServiceScan(timeout)
         self.maxSocketCount = max_socket_count
         self.timeout = timeout
