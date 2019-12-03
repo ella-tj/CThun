@@ -7,10 +7,11 @@
 # @Contact : github.com/FunnyWolf
 import datetime
 import logging.config
+import os
+import sys
 
-# 错误码
 logfilename = "result-{}.log".format(datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
-
+logfilepath = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), logfilename)
 logconfig = {
     'version': 1,
     'formatters': {
@@ -29,7 +30,7 @@ logconfig = {
         },
         'release': {
             'class': 'logging.FileHandler',
-            'filename': logfilename,
+            'filename': logfilepath,
             'level': 'INFO',
             'formatter': 'raw'
         },
