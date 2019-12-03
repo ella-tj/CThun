@@ -5,10 +5,11 @@
 # @license : Copyright(C), funnywolf
 # @Author: funnywolf
 # @Contact : github.com/FunnyWolf
+import datetime
 import logging.config
 
 # 错误码
-
+logfilename = "result-{}.log".format(datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
 
 logconfig = {
     'version': 1,
@@ -28,7 +29,7 @@ logconfig = {
         },
         'release': {
             'class': 'logging.FileHandler',
-            'filename': 'result.log',
+            'filename': logfilename,
             'level': 'INFO',
             'formatter': 'raw'
         },

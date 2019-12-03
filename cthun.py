@@ -169,8 +169,6 @@ if __name__ == '__main__':
     ipf = args.ipf
     raw_lines = []
 
-
-
     if ips is not None:
         try:
             input_lines = ips.split(",")
@@ -237,7 +235,7 @@ if __name__ == '__main__':
     elif max_socket_count >= 1000:
         top_ports_count = 1000
     timeout = args.sockettimeout
-    print("[!] Progrem Start ! All infomation will write to result.log,"
+    print("[!] Progrem Start ! All infomation will write to result-xxx.log,"
           " You can run this progrem on blackground next time. HAPPY HACKING!")
     showports = group_numbers(top_port_list)
 
@@ -298,6 +296,7 @@ if __name__ == '__main__':
 
     if len(proto_list) > 0:
         from bruteforce.bruteForce import bruteforce_interface
+
         for prote in proto_list:
             filename = "{}.txt".format(prote)
             try:
