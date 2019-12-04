@@ -10,7 +10,7 @@ from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM
 import gevent
 from gevent import socket
 
-from lib.config import *
+from lib.config import logger
 from portscan.RE_DATA import *
 
 SOCKET_READ_BUFFERSIZE = 1024  # SOCKET DEFAULT READ BUFFER

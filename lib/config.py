@@ -10,7 +10,7 @@ import logging.config
 import os
 import sys
 
-logfilename = "result-{}.log".format(datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
+logfilename = "{}-result.log".format(datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
 logfilepath = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), logfilename)
 logconfig = {
     'version': 1,

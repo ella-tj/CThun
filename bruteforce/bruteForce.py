@@ -14,7 +14,7 @@ import time
 from ftplib import FTP
 
 from bruteforce.password import Password_total
-from lib.config import *
+from lib.config import logger, log_success
 
 SSL_FLAG = True
 

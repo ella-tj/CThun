@@ -7,6 +7,7 @@
 # @Contact : github.com/FunnyWolf
 import argparse
 import datetime
+import os
 import sys
 import time
 from itertools import groupby
@@ -14,7 +15,6 @@ from itertools import groupby
 from gevent.pool import Pool
 from ipaddr import summarize_address_range, IPv4Network, IPv4Address
 
-from lib.config import logger
 from portscan.RE_DATA import TOP_1000_PORTS_WITH_ORDER
 
 
@@ -101,6 +101,14 @@ def get_one_result(raw_line, proto):
     return result
 
 
+def write_finish_flag(start_timestamp):
+    logfilename = "{}-finish.log".format(start_timestamp)
+    logfilepath = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), logfilename)
+
+    with open(logfilepath, 'wb+') as f:
+        f.write(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="This script can scan port&service like nmap and bruteforce like hydra."
@@ -132,7 +140,7 @@ if __name__ == '__main__':
                         type=float)
     parser.add_argument('-ms', '--maxsocket',
                         metavar='N',
-                        help='Max sockets(100-1000),default is 1000',
+                        help='Max sockets(100-1000),default is 300',
                         default=300,
                         type=int)
     parser.add_argument('-rt', '--retry',
@@ -165,6 +173,7 @@ if __name__ == '__main__':
                         help="Get error log in debug.log",
                         )
     args = parser.parse_args()
+    # 处理ip输入
     ips = args.ips
     ipf = args.ipf
     raw_lines = []
@@ -189,7 +198,7 @@ if __name__ == '__main__':
     if len(ip_list) <= 0:
         print("[!] Can not get ipaddress for -ips or -ipf.")
         print("[!] port scan will pass.")
-
+    # 处理端口输入
     top_ports_count = args.topports
     if top_ports_count <= 0:
         top_ports_count = 0
@@ -227,7 +236,7 @@ if __name__ == '__main__':
     if len(top_port_list) <= 0:
         print("[!] Can not get ports from -p and -tp.")
         print("[!] port scan will pass.")
-
+    # 最大连接数
     max_socket_count = args.maxsocket
 
     if max_socket_count <= 100:
@@ -235,7 +244,7 @@ if __name__ == '__main__':
     elif max_socket_count >= 1000:
         top_ports_count = 1000
     timeout = args.sockettimeout
-    print("[!] Progrem Start ! All infomation will write to result-xxx.log,"
+    print("[!] Progrem Start ! All infomation will write to xxx-result.log,"
           " You can run this progrem on blackground next time. HAPPY HACKING!")
     showports = group_numbers(top_port_list)
 
@@ -248,6 +257,9 @@ if __name__ == '__main__':
         sys.stderr = open(fullname, "w+")
     else:
         sys.stderr = None
+    # 动态加载,获取时间
+    start_timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+    from lib.config import logger
 
     logger.info("----------------- Progrem Start ---------------------")
     logger.info(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
@@ -257,6 +269,7 @@ if __name__ == '__main__':
                                                                                           timeout,
                                                                                           max_socket_count,
                                                                                           showports))
+
     pool = Pool(max_socket_count)
     t1 = time.time()
     from portscan.portScan import GeventScanner
@@ -317,3 +330,7 @@ if __name__ == '__main__':
         logger.info("----------------- BruteForce Finish --------------------")
 
     logger.info("----------------- Progrem Finish -----------------------\n\n")
+    try:
+        write_finish_flag(start_timestamp)
+    except Exception as e:
+        pass
