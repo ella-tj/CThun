@@ -25,7 +25,6 @@ def compile_pattern(allprobes):
                 try:
                     # pattern, _ = codecs.escape_decode(match.get('pattern'))
                     pattern = match.get('pattern').encode('utf-8')
-
                 except Exception as err:
                     pass
                 try:
@@ -355,10 +354,12 @@ class GeventScanner(object):
                 data = self.serviceScan.scan(ipaddress, port, 'tcp')
                 if data.get("error") is None:
                     self.format_log(ipaddress, port, data)
-                    self.resultList.append({"ipaddress": ipaddress, "port": port, "service": data.get("service"), "data": data})
+                    self.resultList.append(
+                        {"ipaddress": ipaddress, "port": port, "service": data.get("service"), "data": data})
                     break
                 else:
                     continue
+
     # gevent 扫描
     def aysnc_main(self, ip_list, port_list, pool):
         tasks = []

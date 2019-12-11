@@ -1,49 +1,139 @@
 # CThun
-CThun是集成快速端口扫描,服务识别,网站识别和暴力破解的工具.
+CThun是集成快速端口扫描,服务识别,netbios扫描,网站识别和暴力破解的工具.
 # 优点
 * 端口扫描扫描速度快(255个IP,TOP100端口,15秒)
 * 服务识别准确(集成NMAP指纹数据库)
 * 单文件无依赖(方便内网扫描)
 * 适应性强(Windows Server 2003,Windows Server 2012,CentOS6,Debain9,ubuntu16)
 * 支持多种协议暴力破解
+* 支持netbios扫描(获取多网卡ip)
+* 支持vul扫描(ms17-010)
 # 缺点
 * 可执行文件大(20M)
 # 依赖
 * Postgresql及RDP的暴力破解依赖OpenSSL(Windows Server 2003/Windows XP不能使用这两个暴力破解功能,其他功能无影响)
-* Linux服务器需要glibc版本大于2.12(ldd --version查看)
+* Linux服务器需要glibc版本大于2.5(ldd --version查看)
 # 使用方法
 * 将可执行文件chton.exe上传到已控制主机
 * chtun -h 查看帮助信息
-## 命令样例
+# 命令样例
+## 使用端口扫描结果进行后续操作
+* 扫描192.168.3.1的C段和192.168.4.1-10,192.168.5.1-2的top100端口和33899,33900,33901端口,结果会保存到XXX_result.log文件中
 ```
 cthun.exe -ips 192.168.3.1/24,192.168.4.1-192.168.4.10,192.168.5.1,192.168.5.2  -tp 100 -p 33899-33901
 ```
-扫描192.168.3.1的C段和192.168.4.1-10,192.168.5.1-2的top100端口和33899,33900,33901端口,结果会保存到result.log文件中
-
+* 扫描ip.txt中的ip地址的top100端口和33899,33900,33901端口,结果会保存到XXX_result.log文件中
 ```
 cthun.exe -ipf ip.txt  -tp 100 -p 33899-33901
 ```
-扫描ip.txt中的ip地址的top100端口和33899,33900,33901端口,结果会保存到result.log文件中
-
+* 端口扫描完成后针对http(s)服务进行增强扫描
 ```
 cthun.exe -ips 192.168.3.1/24,192.168.4.1-192.168.4.10,192.168.5.1,192.168.5.2 -tp 100 -p 33899-33901 -hs
 ```
-端口扫描完成后针对http(s)服务进行增强扫描
-
+* 端口扫描完成后针对smb和rdp服务进行暴力破解,不使用内置字典只使用自定义字典
 ```
 cthun.exe -ips 192.168.3.1/24,192.168.4.1-192.168.4.10,192.168.5.1,192.168.5.2 -tp 100 -p 33899-33901 -bf smb,rdp -nd
 ```
-端口扫描完成后针对smb和rdp服务进行暴力破解,不使用内置字典只使用自定义字典
-
+* 端口扫描完成后针对ftp, ssh, rdp, smb, mysql, mssql, redis, mongodb, memcached,postgresql, vnc服务进行暴力破解,使用内置字典和自定义字典
 ```
 cthun.exe -ips 192.168.3.1/24,192.168.4.1-192.168.4.10,192.168.5.1,192.168.5.2 -tp 100 -p 33899-33901 -bf all 
 ```
-端口扫描完成后针对ftp, ssh, rdp, smb, mysql, mssql, redis, mongodb, memcached,postgresql, vnc服务进行暴力破解,使用内置字典和自定义字典
+
+* 针对指定ip范围进行netbios扫描
+```
+cthun.exe -ips 192.168.3.1/24,192.168.4.1-192.168.4.10,192.168.5.1,192.168.5.2 -nbs 
+```
+
+
+##不使用端口扫描,直接读取txt文件中ip和端口进行后续操作
+
+
+* 使用smb.txt中的ip地址范围,使用hashes.txt中的hash,使用user.txt中的用户名,使用password.txt中的密码,使用domain.txt中的windows域名,不使用内置字典进行smb协议暴力破解
+```
+cthun.exe -bf smb -nd
+```
+
+* 使用smb.txt中的ip地址范围,使用user.txt中的用户名,使用password.txt中的密码,使用文件id_rsa_1及id_rsa_2作为私钥,不使用内置字典进行ssh协议暴力破解
+```
+cthun.exe -bf ssh -nd -sshkeys id_rsa_1,id_rsa_2
+```
+
+
+* 使用ssh.txt中的ip地址范围,使用user.txt中的用户名,使用password.txt中的密码,使用文件id_rsa_1及id_rsa_2作为私钥,不使用内置字典进行ssh协议暴力破解
+```
+cthun.exe -bf ssh -nd -sshkeys id_rsa_1,id_rsa_2
+```
+
+* 使用http.txt中的ip地址范围,进行http扫描并定位网站包含proxy.jsp,ant.jsp,shell.php等url
+```
+cthun.exe -hs -hs-url proxy.jsp,ant.jsp,shell.php
+```
+* 使用smb.txt中的ip地址范围,进行ms17-010的vul扫描
+```
+cthun.exe -vs
+```
+
+
+## txt文件内容样例
+
+* smb.txt
+```
+192.168.3.10:445
+192.168.4.1/24
+```
+* hashes.txt
+```
+testdomain,administrator,aad4b435b51404eeaad3b435b51404ee:8bc3aeb7e2691d071dd14a3b998e9bf7
+testdomain,domainadmin1,aad4b435b51404eeaad3b435b5140412:8bc3aeb7e2691d071dd14a3b998e9b12
+```
+* user.txt(空行表示空用户)
+```
+
+root
+ftp
+administrator
+sa
+mongo
+system
+memcache
+postgres
+```
+* pass.txt(空行表示空密码)
+```
+
+vncpasss
+toor
+ftp
+123qwe!@#!@
+123qwe!@#
+mysqlpass
+my-secret-pw
+123qwe!@#
+foobared
+mongo
+memcache
+password
+test
+```
+* domain.txt
+```
+sealgod
+testdomain
+```
+
+* http.txt
+```
+192.168.3.10-192.168.3.12:80
+192.168.3.10:8080
+192.168.3.10:82
+192.168.3.10:444
+```
+
 # 已测试
 * Windows server 2003
 * Windows7
 * Windows Server 2012
-* CentOS6
+* CentOS5
 * Kali
 # 工具截图
 ![图片](https://uploader.shimo.im/f/jxgOCMlyvbMEnsig.png!thumbnail)
@@ -98,5 +188,14 @@ cthun.exe -ips 192.168.3.1/24,192.168.4.1-192.168.4.10,192.168.5.1,192.168.5.2
 * 修改输出日志文件名,每次扫描输出一个日志文件
 * 增加扫描完成后写入扫描结束时间到单独文件,便于观察那些任务完成了
 
+**1.1.9**
+更新时间: 2019-12-11
+* 增加netbios扫描
+* 优化ssh暴力破解,支持输入RSA私钥进行暴力破解
+* 优化smb暴力破解,支持hash暴力破解,支持输入domain
+* 优化http扫描,支持定位网站是否包含指定url
+* 新增vul扫描,当前支持ms17-010扫描
+* linux依赖降低到glibc2.5版本
 
 cthun(克苏恩)是魔兽世界电子游戏中一位上古之神
+

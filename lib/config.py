@@ -41,7 +41,7 @@ logconfig = {
             'level': "INFO",
         },
         'ReleaseLogger': {
-            'handlers': ['release'],
+            'handlers': ['console', 'release'],
             'level': "INFO",
         },
     }
@@ -57,6 +57,6 @@ def log_success(service, ipaddress, port, user_passwd_pair):
     if user_passwd_pair is None:
         format_str = "{:<16}{:<16}{:<7}unauthorized access ".format(service, ipaddress, port)
     else:
-        format_str = "{:<16}{:<16}{:<7}{:<20}{:<20}".format(service, ipaddress, port, user_passwd_pair[0],
+        format_str = "{:<16}{:<16}{:<7}{:<30}{}".format(service, ipaddress, port, user_passwd_pair[0],
                                                             user_passwd_pair[1])
     logger.warning(format_str)
