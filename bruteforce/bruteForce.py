@@ -281,37 +281,37 @@ class MSSQL_login(object):
                 continue
 
 
-class PostgreSQL_login(object):
-    def __init__(self, timeout=1):
-        self.timeout = timeout
-
-    def login(self, ipaddress, port, user_passwd_pair_list):
-
-        for user_passwd_pair in user_passwd_pair_list:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            try:
-                s.settimeout(self.timeout)
-                s.connect((ipaddress, port))
-            except Exception as E:
-                logger.debug('ConnectException: {} {} {}'.format(E, ipaddress, port))
-                return
-            finally:
-                s.close()
-            try:
-                conn = psycopg2.connect(host=ipaddress,
-                                        port=int(port),
-                                        user=user_passwd_pair[0],
-                                        password=user_passwd_pair[1],
-                                        connect_timeout=self.timeout
-                                        )
-
-                log_success("PostgreSQL", ipaddress, port, user_passwd_pair)
-                conn.close()
-            except Exception as E:
-                logger.debug('AuthenticationException: %s' % E)
-                continue
-            finally:
-                pass
+# class PostgreSQL_login(object):
+#     def __init__(self, timeout=1):
+#         self.timeout = timeout
+#
+#     def login(self, ipaddress, port, user_passwd_pair_list):
+#
+#         for user_passwd_pair in user_passwd_pair_list:
+#             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#             try:
+#                 s.settimeout(self.timeout)
+#                 s.connect((ipaddress, port))
+#             except Exception as E:
+#                 logger.debug('ConnectException: {} {} {}'.format(E, ipaddress, port))
+#                 return
+#             finally:
+#                 s.close()
+#             try:
+#                 conn = psycopg2.connect(host=ipaddress,
+#                                         port=int(port),
+#                                         user=user_passwd_pair[0],
+#                                         password=user_passwd_pair[1],
+#                                         connect_timeout=self.timeout
+#                                         )
+#
+#                 log_success("PostgreSQL", ipaddress, port, user_passwd_pair)
+#                 conn.close()
+#             except Exception as E:
+#                 logger.debug('AuthenticationException: %s' % E)
+#                 continue
+#             finally:
+#                 pass
 
 
 class Redis_login(object):
@@ -572,23 +572,23 @@ class Runer(object):
 def bruteforce_interface(portScan_result_list, timeout, no_default_dict, proto_list, pool, ssh_keys):
     password_total = Password_total()
     password_total.init(no_default_dict)
-    try:
-        import psycopg2
-        tasksQueue = Queue.Queue()
-        postgreSQL_login = PostgreSQL_login()
-        for one_portscan_result in portScan_result_list:
-            service = one_portscan_result.get("service").lower()
-            ipaddress = one_portscan_result.get("ipaddress")
-            port = one_portscan_result.get("port")
-            if "postgresql" in service and "postgresql" in proto_list:
-                tasksQueue.put(
-                    (postgreSQL_login.login, (ipaddress, port, password_total.PostgreSQL_user_passwd_pair_list)))
-        if tasksQueue.empty() is not True:
-            runner = Runer(100)
-            runner.taskQueue = tasksQueue
-            runner.start()
-    except Exception as E:
-        logger.warning("Can not import OpenSSL,PostgreSQL pass")
+    # try:
+    #     import psycopg2
+    #     tasksQueue = Queue.Queue()
+    #     postgreSQL_login = PostgreSQL_login()
+    #     for one_portscan_result in portScan_result_list:
+    #         service = one_portscan_result.get("service").lower()
+    #         ipaddress = one_portscan_result.get("ipaddress")
+    #         port = one_portscan_result.get("port")
+    #         if "postgresql" in service and "postgresql" in proto_list:
+    #             tasksQueue.put(
+    #                 (postgreSQL_login.login, (ipaddress, port, password_total.PostgreSQL_user_passwd_pair_list)))
+    #     if tasksQueue.empty() is not True:
+    #         runner = Runer(100)
+    #         runner.taskQueue = tasksQueue
+    #         runner.start()
+    # except Exception as E:
+    #     logger.warning("Can not import OpenSSL,PostgreSQL pass")
 
     # 协程扫描
     patch_all()

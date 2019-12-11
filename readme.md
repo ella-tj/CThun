@@ -53,12 +53,6 @@ cthun.exe -ips 192.168.3.1/24,192.168.4.1-192.168.4.10,192.168.5.1,192.168.5.2
 cthun.exe -bf smb -nd
 ```
 
-* 使用smb.txt中的ip地址范围,使用user.txt中的用户名,使用password.txt中的密码,使用文件id_rsa_1及id_rsa_2作为私钥,不使用内置字典进行ssh协议暴力破解
-```
-cthun.exe -bf ssh -nd -sshkeys id_rsa_1,id_rsa_2
-```
-
-
 * 使用ssh.txt中的ip地址范围,使用user.txt中的用户名,使用password.txt中的密码,使用文件id_rsa_1及id_rsa_2作为私钥,不使用内置字典进行ssh协议暴力破解
 ```
 cthun.exe -bf ssh -nd -sshkeys id_rsa_1,id_rsa_2

@@ -25,6 +25,7 @@ a = Analysis(['cthun.py'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[
+             "psycopg2",
              "_tkinter",
              "setuptools",
              "multiprocessing",

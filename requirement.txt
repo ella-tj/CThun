@@ -1,10 +1,8 @@
 gevent==1.4.0
 gevent-openssl==1.2
 greenlet==0.4.15
-impacket==0.9.19
+impacket==0.9.20
 parallel-ssh==1.9.1
-#psycopg2==2.8.3
-pycrypto==2.6.1
 pycryptodomex==3.9.0
 PyInstaller==3.4
 pymongo==3.9.0
