@@ -5,7 +5,8 @@
 # @license : Copyright(C), funnywolf 
 # @Author: funnywolf
 # @Contact : github.com/FunnyWolf
-from lib.config import logger
+from lib.config import logger,work_path
+import os
 
 
 # 处理用户输入的用户名/密码
@@ -240,7 +241,9 @@ class Password_total(object):
 
     def init(self, no_default_dict):
         try:
-            with open("user.txt") as f:
+            filename = "user.txt"
+            filepath = os.path.join(work_path, filename)
+            with open(filepath) as f:
                 add_users = []
                 lines = f.readlines()
                 for line in lines:
@@ -248,7 +251,9 @@ class Password_total(object):
         except Exception as E:
             add_users = []
         try:
-            with open("password.txt") as f:
+            filename = "password.txt"
+            filepath = os.path.join(work_path, filename)
+            with open(filepath) as f:
                 add_passwords = []
                 lines = f.readlines()
                 for line in lines:

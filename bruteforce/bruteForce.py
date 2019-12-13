@@ -11,11 +11,11 @@ import json
 import threading
 import time
 from ftplib import FTP
-
+import os
 import Queue
 
 from bruteforce.password import Password_total
-from lib.config import logger, log_success
+from lib.config import logger, log_success,work_path
 
 SSL_FLAG = True
 
@@ -60,7 +60,9 @@ class SSH_login(object):
 
     def login_with_pool_key(self, ipaddress, port, key_file_path_list, pool_size=10):
         try:
-            with open("user.txt") as f:
+            filename = "user.txt"
+            filepath = os.path.join(work_path, filename)
+            with open(filepath) as f:
                 users = []
                 lines = f.readlines()
                 for line in lines:
@@ -131,7 +133,9 @@ class SMB_login(object):
     def login(self, ipaddress, port, user_passwd_pair_list):
 
         try:
-            with open("domain.txt") as f:
+            filename = "domain.txt"
+            filepath = os.path.join(work_path, filename)
+            with open(filepath) as f:
                 domains = []
                 lines = f.readlines()
                 for line in lines:
@@ -165,7 +169,9 @@ class SMB_login(object):
 
     def login_with_hash(self, ipaddress, port):
         try:
-            with open("hashes.txt") as f:
+            filename = "hashes.txt"
+            filepath = os.path.join(work_path, filename)
+            with open(filepath) as f:
                 user_hash_pair_list = []
                 lines = f.readlines()
                 for line in lines:

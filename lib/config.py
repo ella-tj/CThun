@@ -10,8 +10,9 @@ import logging.config
 import os
 import sys
 
+work_path = os.path.dirname(os.path.realpath(sys.argv[0]))
 logfilename = "{}-result.log".format(datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
-logfilepath = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), logfilename)
+logfilepath = os.path.join(work_path, logfilename)
 logconfig = {
     'version': 1,
     'formatters': {
@@ -58,5 +59,5 @@ def log_success(service, ipaddress, port, user_passwd_pair):
         format_str = "{:<16}{:<16}{:<7}unauthorized access ".format(service, ipaddress, port)
     else:
         format_str = "{:<16}{:<16}{:<7}{:<30}{}".format(service, ipaddress, port, user_passwd_pair[0],
-                                                            user_passwd_pair[1])
+                                                        user_passwd_pair[1])
     logger.warning(format_str)

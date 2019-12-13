@@ -188,7 +188,7 @@ if __name__ == '__main__':
                         nargs='?',
                         metavar="true",
                         type=bool,
-                        help="VulScan",
+                        help="VulScan (smb-ms17010)",
                         )
     parser.add_argument('-debug', '--debug', default=False,
                         nargs='?',
@@ -269,8 +269,7 @@ if __name__ == '__main__':
     elif max_socket_count >= 1000:
         top_ports_count = 1000
     timeout = args.sockettimeout
-    print("[!] Progrem Start ! All infomation will write to xxx-result.log,finish time will write to xxx-finish.log"
-          " You can run this progrem on blackground next time. HAPPY HACKING!")
+
     showports = group_numbers(top_port_list)
 
     debug_flag = args.debug
@@ -282,10 +281,12 @@ if __name__ == '__main__':
         sys.stderr = open(fullname, "w+")
     else:
         sys.stderr = None
-    # 动态加载,获取时间
-    start_timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-    from lib.config import logger
 
+    start_timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+    from lib.config import logger,work_path
+    # 动态加载,获取时间
+    print("[!] Progrem Start ! All infomation will write to {}-result.log,finish time will write to xxx-finish.log"
+          " You can run this progrem on blackground next time. HAPPY HACKING!".format(start_timestamp))
     logger.info("----------------- Progrem Start ---------------------")
     logger.info(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
@@ -323,8 +324,9 @@ if __name__ == '__main__':
 
         http_scan_urls = args.http_scan_urls
         filename = "http.txt"
+        filepath = os.path.join(work_path, filename)
         try:
-            with open(filename, "rb") as f:
+            with open(filepath, "rb") as f:
                 file_lines = f.readlines()
                 for line in file_lines:
                     manly_input_result = get_one_result(line.strip(), "http")
@@ -333,11 +335,12 @@ if __name__ == '__main__':
             pass
 
         filename = "https.txt"
+        filepath = os.path.join(work_path, filename)
         try:
-            with open(filename, "rb") as f:
+            with open(filepath, "rb") as f:
                 file_lines = f.readlines()
                 for line in file_lines:
-                    manly_input_result = get_one_result(line.strip(), "http")
+                    manly_input_result = get_one_result(line.strip(), "ssl/http")
                     portScan_result_list.extend(manly_input_result)
         except Exception as E:
             pass
@@ -373,8 +376,9 @@ if __name__ == '__main__':
 
             for prote in proto_list:
                 filename = "{}.txt".format(prote)
+                filepath = os.path.join(work_path, filename)
                 try:
-                    with open(filename, "rb") as f:
+                    with open(filepath, "rb") as f:
                         file_lines = f.readlines()
                         for line in file_lines:
                             manly_input_result = get_one_result(line.strip(), prote)
@@ -414,8 +418,9 @@ if __name__ == '__main__':
         proto_list = ["smb"]
         for prote in proto_list:
             filename = "{}.txt".format(prote)
+            filepath = os.path.join(work_path, filename)
             try:
-                with open(filename, "rb") as f:
+                with open(filepath, "rb") as f:
                     file_lines = f.readlines()
                     for line in file_lines:
                         manly_input_result = get_one_result(line.strip(), prote)
