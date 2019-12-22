@@ -5,8 +5,9 @@
 # @license : Copyright(C), funnywolf 
 # @Author: funnywolf
 # @Contact : github.com/FunnyWolf
-from lib.config import logger,work_path
 import os
+
+from lib.config import logger, work_path
 
 
 # 处理用户输入的用户名/密码
@@ -134,9 +135,9 @@ class Password_total(object):
                              "test123", "123456789", "postgres", "q1w2e3r4", "redhat", "user", "mysql", "apache"],
             },
             "SSH": {
-                "user": ["root", "test", "oracle", "admin", "user", "postgres", "mysql", "backup", "guest",
-                         "system", "web", "guest", "tomcat", "michael", "upload", "alex", "sys", "sales", "linux",
-                         "ftp", "temp", "nagios", "user1", "www", "test1", "eSER!@#"],
+                "user": ["root", "test", "oracle", "admin", "user", "mysql", "backup", "guest", "system", "web",
+                         "guest", "tomcat", "upload", "sys", "sales", "linux", "ftp", "temp", "user1", "www",
+                         "test1", ],
                 "password": ["{user}", "{user}123", "{user}1234", "{user}123456", "{user}12345", "{user}@123",
                              "{user}@123456", "{user}@12345", "{user}#123", "{user}#123456", "{user}#12345",
                              "{user}_123", "{user}_123456", "{user}_12345", "{user}123!@#", "{user}!@#$", "{user}!@#",

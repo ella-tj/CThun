@@ -10,7 +10,7 @@ from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM
 import gevent
 from gevent import socket
 
-from lib.config import logger
+from lib.config import logger, ipportservicelogger
 from portscan.RE_DATA import *
 
 SOCKET_READ_BUFFERSIZE = 1024  # SOCKET DEFAULT READ BUFFER
@@ -378,6 +378,7 @@ class GeventScanner(object):
         if data.get(u"number") is not None:
             # 根据端口猜测fingerprint
             format_str = "{:<16}{:<7}{:<20}".format(ipaddress, port, data.get("service") + "?")
+            store_str = "{},{},{}".format(ipaddress, port, data.get("service") + "?")
         else:
             versioninfo = ""
             try:
@@ -402,4 +403,6 @@ class GeventScanner(object):
                 pass
 
             format_str = "{:<16}{:<7}{:<20}{}".format(ipaddress, port, data.get("service"), versioninfo)
+            store_str = "{},{},{}".format(ipaddress, port, data.get("service"))
         logger.warning(format_str)
+        ipportservicelogger.info(store_str)

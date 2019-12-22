@@ -1,5 +1,6 @@
 # CThun
 CThun是集成快速端口扫描,服务识别,netbios扫描,网站识别和暴力破解的工具.
+
 # 优点
 * 端口扫描扫描速度快(255个IP,TOP100端口,15秒)
 * 服务识别准确(集成NMAP指纹数据库)
@@ -8,14 +9,31 @@ CThun是集成快速端口扫描,服务识别,netbios扫描,网站识别和暴�
 * 支持多种协议暴力破解
 * 支持netbios扫描(获取多网卡ip)
 * 支持vul扫描(ms17-010)
+
 # 缺点
 * 可执行文件大(20M)
+
 # 依赖
 * Postgresql及RDP的暴力破解依赖OpenSSL(Windows Server 2003/Windows XP不能使用这两个暴力破解功能,其他功能无影响)
-* Linux服务器需要glibc版本大于2.5(ldd --version查看)
+* Linux服务器需要glibc版本大于2.5(高于centos5,ldd --version查看)
+
+# 漏洞列表
+* ms17-010
+* CVE_2019_3396
+* CVE_2017_12149
+* S2_015
+* S2_016
+* S2_045
+* CVE_2017_12615
+* CVE_2017_10271
+* CVE_2018_2894
+* CVE_2019_2729
+
+
 # 使用方法
 * 将可执行文件chton.exe上传到已控制主机
 * chtun -h 查看帮助信息
+
 # 命令样例
 ## 使用端口扫描结果进行后续操作
 * 扫描192.168.3.1的C段和192.168.4.1-10,192.168.5.1-2的top100端口和33899,33900,33901端口,结果会保存到XXX_result.log文件中
@@ -45,12 +63,17 @@ cthun.exe -ips 192.168.3.1/24,192.168.4.1-192.168.4.10,192.168.5.1,192.168.5.2
 ```
 
 
-##不使用端口扫描,直接读取txt文件中ip和端口进行后续操作
+##不使用端口扫描,直接读取txt或log文件中ip和端口进行后续操作
 
 
 * 使用smb.txt中的ip地址范围,使用hashes.txt中的hash,使用user.txt中的用户名,使用password.txt中的密码,使用domain.txt中的windows域名,不使用内置字典进行smb协议暴力破解
 ```
 cthun.exe -bf smb -nd
+```
+
+* 使用ipportservice.log(端口扫描自动生成的日志文件)中的ip,端口,服务,使用hashes.txt中的hash,使用user.txt中的用户名,使用password.txt中的密码,使用domain.txt中的windows域名,不使用内置字典进行smb协议暴力破解
+```
+cthun.exe -lf -bf smb -nd
 ```
 
 * 使用ssh.txt中的ip地址范围,使用user.txt中的用户名,使用password.txt中的密码,使用文件id_rsa_1及id_rsa_2作为私钥,不使用内置字典进行ssh协议暴力破解
@@ -62,7 +85,7 @@ cthun.exe -bf ssh -nd -sshkeys id_rsa_1,id_rsa_2
 ```
 cthun.exe -hs -hs-url proxy.jsp,ant.jsp,shell.php
 ```
-* 使用smb.txt中的ip地址范围,进行ms17-010的vul扫描
+* 使用smb.txt,http.txt,https.txt中的ip地址范围,进行ms17-010,struts2,weblogic,tomcat,jboss的vul扫描
 ```
 cthun.exe -vs
 ```
@@ -190,6 +213,12 @@ testdomain
 * 优化http扫描,支持定位网站是否包含指定url
 * 新增vul扫描,当前支持ms17-010扫描
 * linux依赖降低到glibc2.5版本
+
+**1.2.0**
+更新时间: 2019-12-22
+* 增加http的vulscan
+* 优化端口扫描部分,当前会保存所有历史记录到ipportservice.log,可以使用-lf命令加载该记录
+
 
 cthun(克苏恩)是魔兽世界电子游戏中一位上古之神
 

@@ -94,7 +94,7 @@ class HttpScanner(object):
         # 处理头
         if portScan_result.get("service") == "http":
             website = "http://{}:{}".format(portScan_result.get("ipaddress"), portScan_result.get("port"))
-        elif portScan_result.get("service") == "ssl/http":
+        elif portScan_result.get("service") == "ssl/http" or portScan_result.get("service") == "https":
             website = "https://{}:{}".format(portScan_result.get("ipaddress"), portScan_result.get("port"))
         else:
             return
@@ -128,7 +128,7 @@ def http_interface(portScan_result_list, timeout, pool, http_scan_urls=[]):
     tasks = []
     pool = pool
     for portScan_result in portScan_result_list:
-        if portScan_result.get("service") in ["http", "ssl/http"]:
+        if portScan_result.get("service") in ["http", "ssl/http", "https"]:
             task = pool.spawn(httpScanner.scan, portScan_result, http_scan_urls)
             tasks.append(task)
     gevent.joinall(tasks)

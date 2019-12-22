@@ -13,6 +13,8 @@ import sys
 work_path = os.path.dirname(os.path.realpath(sys.argv[0]))
 logfilename = "{}-result.log".format(datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
 logfilepath = os.path.join(work_path, logfilename)
+ipportservicelogfilename = "ipportservice.log"
+logfilepath = os.path.join(work_path, logfilename)
 logconfig = {
     'version': 1,
     'formatters': {
@@ -35,14 +37,20 @@ logconfig = {
             'level': 'INFO',
             'formatter': 'raw'
         },
+        'ipportservice': {
+            'class': 'logging.FileHandler',
+            'filename': ipportservicelogfilename,
+            'level': 'INFO',
+            'formatter': 'raw'
+        },
     },
     'loggers': {
-        'StreamLogger': {
-            'handlers': ['console'],
-            'level': "INFO",
-        },
         'ReleaseLogger': {
             'handlers': ['console', 'release'],
+            'level': "INFO",
+        },
+        'IpportserviceLogger': {
+            'handlers': ['ipportservice'],
             'level': "INFO",
         },
     }
@@ -52,11 +60,12 @@ logging.config.dictConfig(logconfig)
 
 logging.raiseExceptions = False
 logger = logging.getLogger("ReleaseLogger")
+ipportservicelogger = logging.getLogger("IpportserviceLogger")
 
 
 def log_success(service, ipaddress, port, user_passwd_pair):
     if user_passwd_pair is None:
-        format_str = "{:<16}{:<16}{:<7}unauthorized access ".format(service, ipaddress, port)
+        format_str = "{:<16}{:<16}{:<7} unauthorized access ".format(service, ipaddress, port)
     else:
         format_str = "{:<16}{:<16}{:<7}{:<30}{}".format(service, ipaddress, port, user_passwd_pair[0],
                                                         user_passwd_pair[1])
