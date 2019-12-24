@@ -368,7 +368,7 @@ class GeventScanner(object):
             for port in port_list:
                 task = pool.spawn(self.async_scan, ipaddress, port)
                 tasks.append(task)
-                if len(tasks) >= 2000:
+                if len(tasks) >= 10000:
                     gevent.joinall(tasks)
                     tasks = []
         gevent.joinall(tasks)

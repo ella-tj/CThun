@@ -304,8 +304,9 @@ if __name__ == '__main__':
 
     # 获取时间戳
     start_timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-    print("[!] Progrem Start ! All infomation will write to {}-result.log,finish time will write to xxx-finish.log"
-          " You can run this progrem on blackground next time. HAPPY HACKING!".format(start_timestamp))
+    print(
+        "[!] Progrem Start ! All infomation will write to {start_timestamp}-result.log,finish time will write to {start_timestamp}-finish.log"
+        " You can run this progrem on blackground next time. HAPPY HACKING!".format(start_timestamp=start_timestamp))
 
     # 动态加载,获取时间
     from lib.config import logger, work_path, ipportservicelogfilename
@@ -441,11 +442,11 @@ if __name__ == '__main__':
     # netbios扫描
     netbios_scan = args.netbios_scan
     if netbios_scan is not False:
-        from netbios.netbios import netbios_scan
+        from netbios.netbios import netbios_interface
 
         logger.info("----------------- Netbios Scan Start ----------------------")
         t3 = time.time()
-        netbios_scan(ip_list, timeout)
+        netbios_interface(ip_list, timeout, pool)
         t4 = time.time()
         logger.info("Netbios Scan finish,time use : {}s".format(t4 - t3))
         logger.info("----------------- Netbios Scan Finish ---------------------")
