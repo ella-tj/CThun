@@ -5,9 +5,8 @@
 # @license : Copyright(C), funnywolf 
 # @Author: funnywolf
 # @Contact : github.com/FunnyWolf
-import os
 
-from lib.config import logger, work_path
+from lib.config import logger
 
 
 # 处理用户输入的用户名/密码
@@ -240,34 +239,18 @@ class Password_total(object):
                 templist.append(temp)
         return templist
 
-    def init(self, no_default_dict):
-        try:
-            filename = "user.txt"
-            filepath = os.path.join(work_path, filename)
-            with open(filepath) as f:
-                add_users = []
-                lines = f.readlines()
-                for line in lines:
-                    add_users.append(line.strip())
-        except Exception as E:
-            add_users = []
-        try:
-            filename = "password.txt"
-            filepath = os.path.join(work_path, filename)
-            with open(filepath) as f:
-                add_passwords = []
-                lines = f.readlines()
-                for line in lines:
-                    add_passwords.append(line.strip())
-        except Exception as E:
-            add_passwords = []
+    def init(self, default_dict, users, passwords):
 
+        add_users = users
+        add_passwords = passwords
         add_user_passwd_pair_list = []
         for user in add_users:
             for password in add_passwords:
                 add_user_passwd_pair_list.append((user, password.format(user=user)))
 
-        if no_default_dict:
+        if default_dict:
+            pass
+        else:
             self.password_dict = self.password_dict_empty
         logger.info("------------------------------------")
         FTP_user_passwd_pair_list = add_user_passwd_pair_list

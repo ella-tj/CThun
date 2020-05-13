@@ -92,6 +92,8 @@ def get_one_result(raw_line, proto):
                 if ip.compressed not in ipaddress_list:
                     ipaddress_list.append(ip.compressed)
         except Exception as E:
+            # 输入可能是网址
+            ipaddress_list.append(line)
             print(E)
     # service = one_portscan_result.get("service").lower()
     # ipaddress = one_portscan_result.get("ipaddress")
@@ -167,7 +169,7 @@ if __name__ == '__main__':
                         type=bool,
                         help="Advance scan http(s) services,get title,status code and website techs",
                         )
-    parser.add_argument('-hs-url', '--http_scan_urls',
+    parser.add_argument('-hs-url', '--flagurl',
                         default=[],
                         metavar='STR,STR',
                         type=lambda s: [i for i in s.split(",")],
@@ -180,7 +182,7 @@ if __name__ == '__main__':
                         type=lambda s: [i for i in s.split(",")],
                         help="Bruteforce Protocols after portscan.(e.g. 'all,ftp,ssh,rdp,vnc,smb,mysql,mssql,redis,mongodb,memcached')",
                         )
-    parser.add_argument('-bf-nd', '--no_default_dict', default=False,
+    parser.add_argument('-bf-nd', '--default_dict', default=False,
                         nargs='?',
                         metavar="true",
                         type=bool,
@@ -228,13 +230,6 @@ if __name__ == '__main__':
         logger.error("Can not find {0}".format(cmdfile))
         exit(1)
 
-    # 处理最大连接数
-    max_socket_count = params.get("maxsocket")
-    if max_socket_count <= 100:
-        max_socket_count = 100
-    elif max_socket_count >= 1000:
-        top_ports_count = 1000
-
     # 处理debug标签
     debug_flag = params.get("debug")
     if debug_flag is True:
@@ -243,15 +238,42 @@ if __name__ == '__main__':
     else:
         sys.stderr = None
 
+    # 处理最大连接数
+    max_socket_count = params.get("maxsocket")
+    if max_socket_count <= 100:
+        max_socket_count = 100
+    elif max_socket_count >= 1000:
+        top_ports_count = 1000
+
     # 公共变量
     pool = Pool(max_socket_count)
     portScan_result_list = []
 
-    # 端口扫描参数
+    # 加载历史记录
+    load_from_history = params.get("loadfromhistory")
+    if load_from_history is True:
+        # 读取文件中保存的ip地址,端口,服务
+        filepath = os.path.join(work_path, ipportservicelogfilename)
+        try:
+            with open(filepath, "rb") as f:
+                file_lines = f.readlines()
+                for line in file_lines:
+                    ip = line.strip().split(",")[0]
+                    port = line.strip().split(",")[1]
+                    proto = line.strip().split(",")[2]
+                    try:
+                        one_record = {"ipaddress": ip, "port": port, "service": proto}
+                        if one_record not in portScan_result_list:
+                            portScan_result_list.append({"ipaddress": ip, "port": port, "service": proto})
+                    except Exception as E:
+                        pass
+        except Exception as E:
+            pass
 
+    # 端口扫描参数
     if params.get("portscan"):
         portscan = params.get("portscan").get("run")
-        if portscan:
+        if portscan is True:
             ip_list = []
             ips = ""
             try:
@@ -264,6 +286,7 @@ if __name__ == '__main__':
                 portscan = False
 
             if portscan:
+                showports = ""
                 top_ports_count = params.get("portscan").get("topports")
                 if top_ports_count <= 0:
                     top_ports_count = 0
@@ -312,15 +335,14 @@ if __name__ == '__main__':
                     timeout = 0.1
                 elif timeout >= 3:
                     timeout = 3
-            if portscan:
                 from portscan.portScan import GeventScanner
 
                 logger.info("----------------- PortScan Start --------------------")
-                logger.info("IP list: {}\t"
-                            "IP count: {}\t"
-                            "SocketTimeout: {}\t"
-                            "Maxsocket: {}\t"
-                            "Ports: {}".format(ips, len(ip_list), timeout, max_socket_count, showports))
+                logger.info(
+                    "IP list: {}\tIP count: {}\tSocketTimeout: {}\tMaxsocket: {}\tPorts: {}".format(ips, len(ip_list),
+                                                                                                    timeout,
+                                                                                                    max_socket_count,
+                                                                                                    showports))
                 t1 = time.time()
                 pool = Pool(max_socket_count)
                 geventScanner = GeventScanner(max_socket_count=max_socket_count, timeout=timeout, retry=retry)
@@ -329,143 +351,170 @@ if __name__ == '__main__':
                 logger.info("PortScan finish,time use : {}s".format(t2 - t1))
                 logger.info("----------------- PortScan Finish --------------------")
 
-    # 加载历史记录
-    load_from_history = params.get("loadfromhistory")
-    if load_from_history is True:
-        # 读取文件中保存的ip地址,端口,服务
-        filepath = os.path.join(work_path, ipportservicelogfilename)
-        try:
-            with open(filepath, "rb") as f:
-                file_lines = f.readlines()
-                for line in file_lines:
-                    ip = line.strip().split(",")[0]
-                    port = line.strip().split(",")[1]
-                    proto = line.strip().split(",")[2]
-                    try:
-                        one_record = {"ipaddress": ip, "port": port, "service": proto}
-                        if one_record not in portScan_result_list:
-                            portScan_result_list.append({"ipaddress": ip, "port": port, "service": proto})
-                    except Exception as E:
-                        pass
-        except Exception as E:
-            pass
-
-    # web扫描
-    # web扫描
-    http_scan = args.http_scan
-    if http_scan is not False:
-        from httpcheck.httpCheck import http_interface
-
-        http_scan_urls = args.http_scan_urls
-
-        # 读取文件中保存的ip地址和端口
-        filename = "http.txt"
-        filepath = os.path.join(work_path, filename)
-        try:
-            with open(filepath, "rb") as f:
-                file_lines = f.readlines()
-                for line in file_lines:
-                    manly_input_result = get_one_result(line.strip(), "http")
-                    portScan_result_list.extend(manly_input_result)
-        except Exception as E:
-            pass
-
-        filename = "https.txt"
-        filepath = os.path.join(work_path, filename)
-        try:
-            with open(filepath, "rb") as f:
-                file_lines = f.readlines()
-                for line in file_lines:
-                    manly_input_result = get_one_result(line.strip(), "https")
-                    portScan_result_list.extend(manly_input_result)
-        except Exception as E:
-            pass
-
-        logger.info("----------------- HttpCheck Start ----------------------")
-        t3 = time.time()
-        http_interface(portScan_result_list, timeout, pool, http_scan_urls)
-        t4 = time.time()
-        logger.info("HttpCheck finish,time use : {}s".format(t4 - t3))
-        logger.info("----------------- HttpCheck Finish ---------------------")
-
-    # 暴力破解
-    # 暴力破解
-    bf = args.bruteforce
-    if len(bf) > 0:
-        no_default_dict = args.no_default_dict
-        if no_default_dict is not False:
-            no_default_dict = True
-
-        proto_list_all = ['ftp', 'ssh', 'rdp', 'smb', 'mysql', 'mssql', 'redis', 'mongodb', 'memcached',
-                          'postgresql', 'vnc']
-        proto_list = []
-        for proto in bf:
-            if proto.lower() == "all":
-                proto_list = proto_list_all
-                break
-            elif proto.lower() in proto_list_all:
-                proto_list.append(proto.lower())
-
-        if len(proto_list) > 0:
-            from bruteforce.bruteForce import bruteforce_interface
-
-            for prote in proto_list:
-                filename = "{}.txt".format(prote)
-                filepath = os.path.join(work_path, filename)
-                try:
-                    with open(filepath, "rb") as f:
-                        file_lines = f.readlines()
-                        for line in file_lines:
-                            manly_input_result = get_one_result(line.strip(), prote)
-                            portScan_result_list.extend(manly_input_result)
-                except Exception as E:
-                    pass
-
-            sshkeys = args.sshkeys
-            t2 = time.time()
-            logger.info("----------------- BruteForce Start -------------------")
-            logger.info("Protocols: {}\nNo_default_dict: {}".format(proto_list, no_default_dict))
-            bruteforce_interface(portScan_result_list, timeout, no_default_dict, proto_list, pool, sshkeys)
-            t3 = time.time()
-            logger.info("BruteForce finish,time use : {}s".format(t3 - t2))
-            logger.info("----------------- BruteForce Finish --------------------")
-
     # netbios扫描
-    # netbios扫描
-    # netbios扫描
-    netbios_scan = args.netbios_scan
-    if netbios_scan is not False:
-        from netbios.netbios import netbios_interface
+    if params.get("netbiosscan"):
+        netbios_scan = params.get("netbiosscan").get("run")
+        if netbios_scan is True:
+            from netbios.netbios import netbios_interface
 
-        logger.info("----------------- Netbios Scan Start ----------------------")
-        t3 = time.time()
-        netbios_interface(ip_list, timeout, pool)
-        t4 = time.time()
-        logger.info("Netbios Scan finish,time use : {}s".format(t4 - t3))
-        logger.info("----------------- Netbios Scan Finish ---------------------")
-
-    vulscan = args.vulscan
-    if vulscan is not False:
-        from vulscan.vulScan import vulscan_interface
-
-        logger.info("----------------- Vul Scan Start ----------------------")
-        t3 = time.time()
-        proto_list = ["smb", "http", "https"]
-        for prote in proto_list:
-            filename = "{}.txt".format(prote)
-            filepath = os.path.join(work_path, filename)
+            ip_list = []
+            ips = ""
             try:
-                with open(filepath, "rb") as f:
-                    file_lines = f.readlines()
-                    for line in file_lines:
-                        manly_input_result = get_one_result(line.strip(), prote)
-                        portScan_result_list.extend(manly_input_result)
+                ips = params.get("netbiosscan").get("ipaddress")
+                ip_list = get_ipaddresses(ips.split(","))
             except Exception as E:
                 pass
-        vulscan_interface(portScan_result_list=portScan_result_list, timeout=timeout, pool=pool)
-        t4 = time.time()
-        logger.info("Netbios Scan finish,time use : {}s".format(t4 - t3))
-        logger.info("----------------- Vul Scan Finish ---------------------")
+            if len(ip_list) <= 0:
+                logger.warn("Can not get ipaddress from cmd.json.")
+                netbios_scan = False
+
+            # 处理超时时间
+            timeout = params.get("netbiosscan").get("sockettimeout")
+            if timeout <= 0.1:
+                timeout = 0.1
+            elif timeout >= 3:
+                timeout = 3
+
+            logger.info("----------------- Netbios Scan Start ----------------------")
+            t3 = time.time()
+            netbios_interface(ip_list, timeout, pool)
+            t4 = time.time()
+            logger.info("Netbios Scan finish,time use : {} s".format(t4 - t3))
+            logger.info("----------------- Netbios Scan Finish ---------------------")
+
+    # http扫描
+    if params.get("httpscan"):
+        http_scan = params.get("httpscan").get("run")
+        if http_scan is True:
+            from httpcheck.httpCheck import http_interface
+
+            # 处理超时时间
+            timeout = params.get("httpscan").get("sockettimeout")
+            if timeout <= 0.1:
+                timeout = 0.1
+            elif timeout >= 3:
+                timeout = 3
+
+            httpstr = params.get("httpscan").get("http")
+            lines = httpstr.split(",")
+            for line in lines:
+                manly_input_result = get_one_result(line.strip(), "http")
+                portScan_result_list.extend(manly_input_result)
+
+            httpsstr = params.get("httpscan").get("https")
+            lines = httpsstr.split(",")
+            for line in lines:
+                manly_input_result = get_one_result(line.strip(), "https")
+                portScan_result_list.extend(manly_input_result)
+
+            flagurl = params.get("httpscan").get("flagurl")
+            if flagurl is not None:
+                flagurl = flagurl.split(",")
+            else:
+                flagurl = []
+
+            logger.info("----------------- HttpCheck Start ----------------------")
+            t3 = time.time()
+            http_interface(portScan_result_list, timeout, pool, flagurl)
+            t4 = time.time()
+            logger.info("HttpCheck finish,time use : {}s".format(t4 - t3))
+            logger.info("----------------- HttpCheck Finish ---------------------")
+
+    # 暴力破解
+    if params.get("bruteforce"):
+        bruteforce = params.get("bruteforce").get("run")
+        if bruteforce is True:
+            # 处理超时时间
+            timeout = params.get("bruteforce").get("sockettimeout")
+            if timeout <= 0.1:
+                timeout = 0.1
+            elif timeout >= 3:
+                timeout = 3
+
+            defaultdict = params.get("bruteforce").get("defaultdict")
+
+            if params.get("bruteforce").get("users") == [] or params.get("bruteforce").get("users") is None:
+                users = []
+            else:
+                users = params.get("bruteforce").get("users").split(",")
+
+            if params.get("bruteforce").get("passwords") == [] or params.get("bruteforce").get("passwords") is None:
+                passwords = []
+            else:
+                passwords = params.get("bruteforce").get("passwords").split(",")
+
+            if params.get("bruteforce").get("hashes") == [] or params.get("bruteforce").get("hashes") is None:
+                hashes = []
+            else:
+                hashes = params.get("bruteforce").get("hashes")
+
+            if params.get("bruteforce").get("sshkeys") == [] or params.get("bruteforce").get("sshkeys") is None:
+                sshkeys = []
+            else:
+                sshkeys = []
+                sshkeysstr = params.get("bruteforce").get("sshkeys").split(",")
+                for onekey in sshkeysstr:
+                    sshkeys.append(os.path.join(work_path, onekey))
+
+            proto_list = []
+            proto_list_all = ['ftp', 'ssh', 'rdp', 'smb', 'mysql', 'mssql', 'redis', 'mongodb', 'memcached',
+                              'postgresql', 'vnc']
+
+            for proto in proto_list_all:
+                line = params.get("bruteforce").get(proto)
+                if line is not None:
+                    proto_list.append(proto)  # 加入到列表,端口扫描结果也使用
+                    manly_input_result = get_one_result(line.strip(), proto)
+                    portScan_result_list.extend(manly_input_result)
+
+            if len(proto_list) > 0:
+                from bruteforce.bruteForce import bruteforce_interface
+
+                t2 = time.time()
+                logger.info("----------------- BruteForce Start -------------------")
+                logger.info("Protocols: {}\tDefaultdict: {}".format(proto_list, defaultdict))
+
+                bruteforce_interface(
+                    portScan_result_list=portScan_result_list,
+                    timeout=timeout,
+                    proto_list=proto_list,
+                    pool=pool,
+                    default_dict=defaultdict,
+                    users=users,
+                    passwords=passwords,
+                    hashes=hashes,
+                    ssh_keys=sshkeys,
+                )
+                t3 = time.time()
+                logger.info("BruteForce finish,time use : {} s".format(t3 - t2))
+                logger.info("----------------- BruteForce Finish --------------------")
+
+    if params.get("vulscan"):
+        vulscan = params.get("vulscan").get("run")
+        if vulscan is True:
+            from vulscan.vulScan import vulscan_interface
+
+            logger.info("----------------- VulScan Start ----------------------")
+            t3 = time.time()
+
+            # 处理超时时间
+            timeout = params.get("vulscan").get("sockettimeout")
+            if timeout <= 0.1:
+                timeout = 0.1
+            elif timeout >= 3:
+                timeout = 3
+
+            proto_list = ["smb", "http", "https"]
+            for proto in proto_list:
+                line = params.get("vulscan").get(proto)
+                if line is not None:
+                    manly_input_result = get_one_result(line.strip(), proto)
+                    portScan_result_list.extend(manly_input_result)
+
+            vulscan_interface(portScan_result_list=portScan_result_list, timeout=timeout, pool=pool)
+            t4 = time.time()
+            logger.info("Netbios Scan finish,time use : {}s".format(t4 - t3))
+            logger.info("----------------- Vul Scan Finish ---------------------")
 
     logger.info("----------------- Progrem Finish -----------------------\n\n")
 

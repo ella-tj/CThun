@@ -1,17 +1,45 @@
 {
+  "maxsocket": 300,
+  "loadfromhistory": false,
   "portscan": {
-    "run": true,
+    "run": false,
     "ipaddress": "192.168.146.1-192.168.146.131",
     "ports": "445,139",
     "topports": 10,
     "sockettimeout": 0.2,
     "retry": 2
   },
+  "netbiosscan": {
+    "run": false,
+    "ipaddress": "192.168.146.1-192.168.146.174",
+    "sockettimeout": 0.2
+  },
   "httpscan": {
     "run": false,
-    "flagurl": "/admin/login.jsp,/js/ijustcheck.js"
+    "sockettimeout": 0.2,
+    "http": "192.168.146.10:82",
+    "https": "192.168.146.10:443",
+    "flagurl": "/admin/login.jsp,/js/ijustcheck.js,/shell.php"
   },
-  "maxsocket": 300,
-  "loadfromhistory": false,
-  "netbiosscan": false
+  "bruteforce": {
+    "run": true,
+    "smb": "192.168.146.1-192.168.146.131:445",
+    "ssh": "192.168.146.130:22",
+    "redis": "192.168.146.130:6379",
+    "sockettimeout": 0.2,
+    "defaultdict": false,
+    "users": "administrator,root",
+    "passwords": "1234qwer!@#$,toor,foobared",
+    "hashes": [
+      "sealgod,domainadmin1,ae946ec6f4ca785ba54985f61a715a72:1d4d84d758cfa9a8a39f7121cb3e51ed"
+    ],
+    "sshkeys": "id_rsa"
+  },
+  "vulscan": {
+    "run": false,
+    "sockettimeout": 0.2,
+    "smb": "192.168.3.13:445",
+    "http": "192.168.146.10:82",
+    "https": "192.168.146.10:443"
+  }
 }
