@@ -9,13 +9,12 @@
 import Queue
 import binascii
 import json
-import os
 import threading
 import time
 from ftplib import FTP
 
 from bruteforce.password import Password_total
-from lib.config import logger, log_success, work_path
+from lib.config import logger, log_success
 
 SSL_FLAG = True
 
@@ -123,41 +122,32 @@ class SMB_login(object):
         self.timeout = timeout
 
     def login(self, ipaddress, port, user_passwd_pair_list):
-
-        try:
-            filename = "domain.txt"
-            filepath = os.path.join(work_path, filename)
-            with open(filepath) as f:
-                domains = []
-                lines = f.readlines()
-                for line in lines:
-                    domains.append(line.strip())
-                domains.append("")
-        except Exception as E:
-            domains = [""]
-
         for user_passwd_pair in user_passwd_pair_list:
-            for domain in domains:
-                try:
-                    fp = SMBConnection('*SMBSERVER', ipaddress, sess_port=int(port), timeout=self.timeout)
-                except Exception as E:
-                    logger.debug('ConnectException: {} {} {}'.format(E, ipaddress, port))
-                    return
-                try:
-                    if fp.login(user_passwd_pair[0], user_passwd_pair[1], domain=domain):
-                        if fp.isGuestSession() == 0:
-                            if domain == "":
-                                log_success("SMB", ipaddress, port, user_passwd_pair)
-                            else:
-                                log_success("SMB", ipaddress, port,
-                                            ["{}/{}".format(domain, user_passwd_pair[0]),
-                                             user_passwd_pair[1]
-                                             ])
+            try:
+                fp = SMBConnection('*SMBSERVER', ipaddress, sess_port=int(port), timeout=self.timeout)
+            except Exception as E:
+                logger.debug('ConnectException: {} {} {}'.format(E, ipaddress, port))
+                return
+            try:
+                if "\\" in user_passwd_pair[0]:
+                    domain = user_passwd_pair[0].split("\\")[0]
+                    username = user_passwd_pair[0].split("\\")[1]
+                else:
+                    domain = ""
+                    username = user_passwd_pair[0]
 
-                except Exception as E:
-                    logger.debug('AuthenticationException: %s' % E)
-                finally:
-                    fp.getSMBServer().get_socket().close()
+                if fp.login(username, user_passwd_pair[1], domain=domain):
+                    if fp.isGuestSession() == 0:
+                        if domain == "":
+                            log_success("SMB", ipaddress, port, user_passwd_pair)
+                        else:
+                            log_success("SMB", ipaddress, port,
+                                        ["{}\\{}".format(domain, username), user_passwd_pair[1]])
+
+            except Exception as E:
+                logger.debug('AuthenticationException: %s' % E)
+            finally:
+                fp.getSMBServer().get_socket().close()
 
     def login_with_hash(self, ipaddress, port, hashes):
 
