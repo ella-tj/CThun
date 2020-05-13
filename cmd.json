@@ -1,0 +1,17 @@
+{
+  "portscan": {
+    "run": true,
+    "ipaddress": "192.168.146.1-192.168.146.131",
+    "ports": "445,139",
+    "topports": 10,
+    "sockettimeout": 0.2,
+    "retry": 2
+  },
+  "httpscan": {
+    "run": false,
+    "flagurl": "/admin/login.jsp,/js/ijustcheck.js"
+  },
+  "maxsocket": 300,
+  "loadfromhistory": false,
+  "netbiosscan": false
+}

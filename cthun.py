@@ -7,6 +7,7 @@
 # @Contact : github.com/FunnyWolf
 import argparse
 import datetime
+import json
 import os
 import sys
 import time
@@ -135,8 +136,8 @@ if __name__ == '__main__':
                         type=int)
     parser.add_argument('-t', '--sockettimeout',
                         metavar='N',
-                        help='Socket Timeout(second),default is 0.5',
-                        default=0.5,
+                        help='Socket Timeout(second),default is 0.2',
+                        default=0.2,
                         type=float)
     parser.add_argument('-ms', '--maxsocket',
                         metavar='N',
@@ -148,11 +149,17 @@ if __name__ == '__main__':
                         help='Retry count if connet port timeout(1-3),default is 2',
                         default=2,
                         type=int)
-    parser.add_argument('-lf', '--load_from_ipportservicelog', default=False,
+    parser.add_argument('-lf', '--load_from_history', default=False,
                         nargs='?',
                         metavar="true",
                         type=bool,
                         help="Load ip,port,service infomation from ipportservice.log,use for http_scan,bruteforce,vulscan",
+                        )
+    parser.add_argument('-nbs', '--netbios_scan', default=False,
+                        nargs='?',
+                        metavar="true",
+                        type=bool,
+                        help="Run netbios scan on input ipadddress",
                         )
     parser.add_argument('-hs', '--http_scan', default=False,
                         nargs='?',
@@ -166,6 +173,7 @@ if __name__ == '__main__':
                         type=lambda s: [i for i in s.split(",")],
                         help="Check whether website respond 200 on input url,you can input like '/admin/login.jsp,/js/ijustcheck.js'",
                         )
+
     parser.add_argument('-bf', '--bruteforce',
                         default=[],
                         metavar='STR,STR',
@@ -184,12 +192,7 @@ if __name__ == '__main__':
                         type=lambda s: [i for i in s.split(",")],
                         help="rsa private key filepath(for ssh bruteforce,you can input like 'id_rsa_1,id_rsa_2', use users in user.txt)",
                         )
-    parser.add_argument('-nbs', '--netbios_scan', default=False,
-                        nargs='?',
-                        metavar="true",
-                        type=bool,
-                        help="Run netbios scan on input ipadddress",
-                        )
+
     parser.add_argument('-vs', '--vulscan', default=False,
                         nargs='?',
                         metavar="true",
@@ -204,141 +207,131 @@ if __name__ == '__main__':
                         )
 
     args = parser.parse_args()
-    # 处理ip输入
-    ips = args.ips
-    ipf = args.ipf
-    raw_lines = []
 
-    if ips is not None:
-        try:
-            input_lines = ips.split(",")
-            raw_lines.extend(input_lines)
-        except Exception as E:
-            print(E)
-    if ipf is not None:
-        try:
-            with open(ipf, "rb") as f:
-                file_lines = f.readlines()
-                for line in file_lines:
-                    raw_lines.append(line.strip())
-        except Exception as E:
-            print(E)
+    # 动态加载,获取时间
+    from lib.config import logger, work_path, ipportservicelogfilename
 
-    ip_list = get_ipaddresses(raw_lines)
+    cmdfile = "cmd.json"
+    cmdfilepath = os.path.join(work_path, cmdfile)
 
-    if len(ip_list) <= 0:
-        print("[!] Can not get ipaddress for -ips or -ipf.")
-        print("[!] port/netbios scan will pass.")
-        # 检查是否进行bf和hs
-        http_scan = args.http_scan
-        bf = args.bruteforce
-        vulscan = args.vulscan
-        if http_scan is not False or len(bf) > 0 or vulscan is not False:
-            pass
-        else:
-            parser.print_help()
-            sys.exit(1)
+    # 获取时间戳
+    start_timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+    print("[!] Result will write to {start_timestamp}-result.log,finish time will write to {start_timestamp}-finish.log"
+          " You can run this progrem on blackground next time. HAPPY HACKING!".format(start_timestamp=start_timestamp))
 
-    # 处理retry参数
-    retry = args.retry
-    if retry <= 1:
-        top_ports_count = 1
-    elif retry >= 3:
-        retry = 3
-
-    # 处理端口输入
-    top_ports_count = args.topports
-    if top_ports_count <= 0:
-        top_ports_count = 0
-    elif top_ports_count >= 1000:
-        top_ports_count = 1000
-
-    port_list = []
-    ports_str = args.ports
-    for one in ports_str:
-        try:
-            if len(one.split("-")) == 2:
-                start_port = int(one.split("-")[0])
-                end_port = int(one.split("-")[1])
-                for i in range(start_port, end_port + 1):
-                    if i not in port_list and (0 < i <= 65535):
-                        port_list.append(i)
-            else:
-                i = int(one)
-                if i not in port_list and (0 < i <= 65535):
-                    port_list.append(i)
-        except Exception as E:
-            pass
-
-    top_port_list = TOP_1000_PORTS_WITH_ORDER[0:top_ports_count]
-    for i in port_list:
-        if i not in top_port_list:
-            top_port_list.append(i)
-
-    if len(top_port_list) <= 0:
-        print("[!] Can not get ports from -p and -tp.")
-        print("[!] port scan will pass.")
-    showports = group_numbers(top_port_list)
+    logger.info("----------------- Progrem Start ---------------------")
+    logger.info(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    try:
+        with open(cmdfilepath) as f:
+            params = json.load(f)
+    except Exception as E:
+        logger.error("Can not find {0}".format(cmdfile))
+        exit(1)
 
     # 处理最大连接数
-    max_socket_count = args.maxsocket
-
+    max_socket_count = params.get("maxsocket")
     if max_socket_count <= 100:
         max_socket_count = 100
     elif max_socket_count >= 1000:
         top_ports_count = 1000
 
-    # 处理超时时间
-    timeout = args.sockettimeout
-
     # 处理debug标签
-    debug_flag = args.debug
-    if debug_flag is not False:
-        debug_flag = True
-
+    debug_flag = params.get("debug")
     if debug_flag is True:
         fullname = "debug.log"
         sys.stderr = open(fullname, "w+")
     else:
         sys.stderr = None
 
-    # 获取时间戳
-    start_timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-    print(
-        "[!] Progrem Start ! All infomation will write to {start_timestamp}-result.log,finish time will write to {start_timestamp}-finish.log"
-        " You can run this progrem on blackground next time. HAPPY HACKING!".format(start_timestamp=start_timestamp))
+    # 公共变量
+    pool = Pool(max_socket_count)
+    portScan_result_list = []
 
-    # 动态加载,获取时间
-    from lib.config import logger, work_path, ipportservicelogfilename
+    # 端口扫描参数
 
-    logger.info("----------------- Progrem Start ---------------------")
-    logger.info(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    if params.get("portscan"):
+        portscan = params.get("portscan").get("run")
+        if portscan:
+            ip_list = []
+            ips = ""
+            try:
+                ips = params.get("portscan").get("ipaddress")
+                ip_list = get_ipaddresses(ips.split(","))
+            except Exception as E:
+                pass
+            if len(ip_list) <= 0:
+                logger.warn("Can not get ipaddress from cmd.json.")
+                portscan = False
 
-    # 端口扫描
-    # 端口扫描
-    # 输入了有效的ip列表及端口号
-    if len(ip_list) > 0 and top_port_list > 0:
-        logger.info("----------------- PortScan Start --------------------")
-        logger.info("\nIP list: {}\nIP count: {}\nSocketTimeout: {}\nMaxsocket: {}\nPorts: {}".format(raw_lines,
-                                                                                                      len(ip_list),
-                                                                                                      timeout,
-                                                                                                      max_socket_count,
-                                                                                                      showports))
-        t1 = time.time()
-        pool = Pool(max_socket_count)
-        from portscan.portScan import GeventScanner
+            if portscan:
+                top_ports_count = params.get("portscan").get("topports")
+                if top_ports_count <= 0:
+                    top_ports_count = 0
+                elif top_ports_count >= 1000:
+                    top_ports_count = 1000
 
-        geventScanner = GeventScanner(max_socket_count=max_socket_count, timeout=timeout, retry=retry)
-        portScan_result_list = geventScanner.aysnc_main(ip_list, top_port_list, pool)
-        t2 = time.time()
-        logger.info("PortScan finish,time use : {}s".format(t2 - t1))
-        logger.info("----------------- PortScan Finish --------------------")
-    else:
-        pool = Pool(max_socket_count)
-        portScan_result_list = []
+                port_list = []
+                ports_str = params.get("portscan").get("ports")
+                for one in ports_str:
+                    try:
+                        if len(one.split("-")) == 2:
+                            start_port = int(one.split("-")[0])
+                            end_port = int(one.split("-")[1])
+                            for i in range(start_port, end_port + 1):
+                                if i not in port_list and (0 < i <= 65535):
+                                    port_list.append(i)
+                        else:
+                            i = int(one)
+                            if i not in port_list and (0 < i <= 65535):
+                                port_list.append(i)
+                    except Exception as E:
+                        pass
+
+                top_port_list = TOP_1000_PORTS_WITH_ORDER[0:top_ports_count]
+                for i in port_list:
+                    if i not in top_port_list:
+                        top_port_list.append(i)
+                if len(top_port_list) <= 0:
+                    logger.warn("Can not get ports cmd.json.")
+                    portscan = False
+                else:
+                    showports = group_numbers(top_port_list)
+
+            if portscan:
+                # 处理retry参数
+                retry = params.get("portscan").get("retry")
+                if retry <= 1:
+                    retry = 1
+                elif retry >= 3:
+                    retry = 3
+
+                # 处理最大连接数
+                timeout = params.get("portscan").get("sockettimeout")
+
+                if timeout <= 0.1:
+                    timeout = 0.1
+                elif timeout >= 3:
+                    timeout = 3
+            if portscan:
+                from portscan.portScan import GeventScanner
+
+                logger.info("----------------- PortScan Start --------------------")
+                logger.info("IP list: {}\t"
+                            "IP count: {}\t"
+                            "SocketTimeout: {}\t"
+                            "Maxsocket: {}\t"
+                            "Ports: {}".format(ips, len(ip_list), timeout, max_socket_count, showports))
+                t1 = time.time()
+                pool = Pool(max_socket_count)
+                geventScanner = GeventScanner(max_socket_count=max_socket_count, timeout=timeout, retry=retry)
+                portScan_result_list = geventScanner.aysnc_main(ip_list, top_port_list, pool)
+                t2 = time.time()
+                logger.info("PortScan finish,time use : {}s".format(t2 - t1))
+                logger.info("----------------- PortScan Finish --------------------")
+
     # 加载历史记录
-    load_from_ipportservicelog = args.load_from_ipportservicelog
-    if load_from_ipportservicelog is not False:
+    load_from_history = params.get("loadfromhistory")
+    if load_from_history is True:
         # 读取文件中保存的ip地址,端口,服务
         filepath = os.path.join(work_path, ipportservicelogfilename)
         try:
