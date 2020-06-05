@@ -3,9 +3,9 @@
   "sockettimeout": 0.2,
   "loadfromhistory": false,
   "portscan": {
-    "run": false,
+    "run": true,
     "ipaddress": [
-      "192.168.146.1-192.168.146.131"
+      "192.168.146.1-192.168.146.255"
     ],
     "ports": [
       "21-23",
@@ -16,9 +16,9 @@
     "retry": 2
   },
   "netbiosscan": {
-    "run": false,
+    "run": true,
     "ipaddress": [
-      "192.168.146.1-192.168.146.174"
+      "192.168.146.1-192.168.146.255"
     ]
   },
   "httpscan": {
@@ -82,5 +82,6 @@
     "https": [
       "192.168.146.10:443"
     ]
-  }
+  },
+  "debug": false
 }
