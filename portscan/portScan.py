@@ -13,7 +13,7 @@ from gevent import socket
 from lib.config import logger, ipportservicelogger
 from portscan.RE_DATA import *
 
-SOCKET_READ_BUFFERSIZE = 1024  # SOCKET DEFAULT READ BUFFER
+SOCKET_READ_BUFFERSIZE = 1280  # SOCKET DEFAULT READ BUFFER
 
 
 def compile_pattern(allprobes):
