@@ -10,8 +10,10 @@ import logging.config
 import os
 import sys
 
+start_timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+finishlogfile = "{}-finish.log".format(start_timestamp)
 work_path = os.path.dirname(os.path.realpath(sys.argv[0]))
-logfilename = "{}-result.log".format(datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
+logfilename = "{}-running.log".format(start_timestamp)
 logfilepath = os.path.join(work_path, logfilename)
 ipportservicelogfilename = "ipportservice.log"
 logfilepath = os.path.join(work_path, logfilename)

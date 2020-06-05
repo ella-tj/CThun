@@ -15,7 +15,7 @@ from itertools import groupby
 from gevent.pool import Pool
 from ipaddr import summarize_address_range, IPv4Network, IPv4Address
 
-from lib.config import logger, work_path, ipportservicelogfilename
+from lib.config import logger, work_path, ipportservicelogfilename, finishlogfile
 from portscan.RE_DATA import TOP_1000_PORTS_WITH_ORDER
 
 
@@ -101,28 +101,22 @@ def get_one_result(raw_line, proto):
     return result
 
 
-def write_finish_flag(start_timestamp):
-    logfilename = "{}-finish.log".format(start_timestamp)
-    logfilepath = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), logfilename)
-
+def write_finish_flag():
+    logfilepath = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), finishlogfile)
     with open(logfilepath, 'wb+') as f:
         f.write(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
 
 if __name__ == '__main__':
-
     # 获取时间戳
-    start_timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-
     logger.info("----------------- Progrem Start ---------------------")
-
     try:
-        cmdfile = "cmd.json"
-        cmdfilepath = os.path.join(work_path, cmdfile)
-        with open(cmdfilepath) as f:
+        paramsfile = "param.json"
+        paramsfilepath = os.path.join(work_path, paramsfile)
+        with open(paramsfilepath) as f:
             params = json.load(f)
     except Exception as E:
-        logger.error("Can not find {0}".format(cmdfile))
+        logger.error("Can not find {0}".format(paramsfile))
         sys.exit(1)
 
     # 处理debug标签
@@ -187,7 +181,7 @@ if __name__ == '__main__':
             except Exception as E:
                 pass
             if len(ip_list) <= 0:
-                logger.warn("Can not get portscan ipaddress from cmd.json.")
+                logger.warn("Can not get portscan ipaddress from param.json.")
                 portscan = False
 
         if portscan:
@@ -229,7 +223,7 @@ if __name__ == '__main__':
                 if i not in top_port_list:
                     top_port_list.append(i)
             if len(top_port_list) <= 0:
-                logger.warn("Can not get portscan ports cmd.json.")
+                logger.warn("Can not get portscan ports param.json.")
                 portscan = False
             else:
                 showports = group_numbers(top_port_list)
@@ -280,7 +274,7 @@ if __name__ == '__main__':
                 pass
 
             if len(ip_list) <= 0:
-                logger.warn("Can not get ipaddress from cmd.json.")
+                logger.warn("Can not get ipaddress from param.json.")
                 netbios_scan = False
             else:
                 logger.info("----------------- Netbios Scan Start ----------------------")
@@ -432,6 +426,7 @@ if __name__ == '__main__':
 
     # 写入结束标志
     try:
-        write_finish_flag(start_timestamp)
+        write_finish_flag()
     except Exception as e:
+        print(e)
         pass
