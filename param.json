@@ -5,47 +5,41 @@
   "portscan": {
     "run": true,
     "ipaddress": [
-      "192.168.146.1-192.168.146.255"
+      "192.168.146.1/24"
     ],
     "ports": [
-      "21-23",
-      139,
-      445
+      22,
+      445,
+      6379,
+      "8080-8090"
     ],
-    "topports": 10,
+    "topports": 0,
     "retry": 2
   },
   "netbiosscan": {
-    "run": true,
+    "run": false,
     "ipaddress": [
       "192.168.146.1-192.168.146.255"
     ]
   },
   "httpscan": {
-    "run": false,
+    "run": true,
     "http": [
-      "192.168.146.137:82"
     ],
     "https": [
-      "192.168.146.10:443"
     ],
     "flagurl": [
-      "/admin/login.jsp",
-      "/js/ijustcheck.js",
-      "/shell.php"
+      {
+        "url": "/proxy.jsp",
+        "data": "stingers"
+      }
     ]
   },
   "bruteforce": {
-    "run": true,
-    "smb": [
-      "192.168.146.130-192.168.146.140"
-    ],
-    "ssh": [
-      "192.168.146.130:22"
-    ],
-    "redis": [
-      "192.168.146.130:6379"
-    ],
+    "run": false,
+    "smb": ["192.168.3.10:445"],
+    "ssh": [],
+    "redis": [],
     "ftp": [],
     "rdp": [],
     "mysql": [],
@@ -53,23 +47,19 @@
     "mongodb": [],
     "memcached": [],
     "vnc": [],
-    "defaultdict": false,
+    "defaultdict": true,
     "users": [
-      "sealgod\\administrator",
-      "administrator",
-      "root"
+      "software1",
+      "yourname"
     ],
     "passwords": [
-      "1234qwer!@#$",
-      "root",
-      "foobared"
+      "test",
+      "soft123456"
     ],
     "hashes": [
-      "sealgod,domainadmin1,ae946ec6f4ca785ba54985f61a715a72:1d4d84d758cfa9a8a39f7121cb3e51ed"
+      "mydomain,domainadmin1,ae946ec6f4ca785ba54985f61a715a72:1d4d84d758cfa9a8a39f7121cb3e51ed"
     ],
-    "sshkeys": [
-      "id_rsa"
-    ]
+    "sshkeys": []
   },
   "vulscan": {
     "run": false,

@@ -16,7 +16,6 @@ work_path = os.path.dirname(os.path.realpath(sys.argv[0]))
 logfilename = "{}-running.log".format(start_timestamp)
 logfilepath = os.path.join(work_path, logfilename)
 ipportservicelogfilename = "ipportservice.log"
-logfilepath = os.path.join(work_path, logfilename)
 logconfig = {
     'version': 1,
     'formatters': {

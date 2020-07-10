@@ -46,12 +46,12 @@ class HttpScanner(object):
             return False, None
         return True, response
 
-    def check_website_url(self, website=None, urls=[]):
-        for url in urls:
+    def check_website_url(self, website=None, http_scan_urls=[]):
+        for url_and_data in http_scan_urls:
             if website.startswith('https://') or website.startswith('http://'):
-                entireUrl = "{}/{}".format(website, url)
+                entireUrl = "{}/{}".format(website, url_and_data.get("url"))
             else:
-                entireUrl = "http://{}/{}".format(website, url)
+                entireUrl = "http://{}/{}".format(website, url_and_data.get("url"))
             try:
                 logging.captureWarnings(True)
                 response = requests.get(entireUrl,
@@ -63,11 +63,13 @@ class HttpScanner(object):
             except Exception as E:
                 continue
             if response.ok:
-                logger.warning("WebSite   : {}".format(website))
-                logger.warning("StatusCode: {}".format(response.status_code))
-                logger.warning("Url       : {}".format(url))
-                logger.warning("Maybe this is your target !!!")
-                logger.warning("----------------------------------------------")
+                data = url_and_data.get("data")
+                if data in response.text:
+                    logger.warning("WebSite   : {}".format(website))
+                    logger.warning("StatusCode: {}".format(response.status_code))
+                    logger.warning("Url       : {}".format(url_and_data.get("url")))
+                    logger.warning("Maybe this is your target !!!")
+                    logger.warning("----------------------------------------------")
 
     def logger_website(self, portScan_result, website, title, wappalyzer_list, response):
         tech_list = []

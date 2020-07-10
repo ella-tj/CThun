@@ -193,17 +193,17 @@ if __name__ == '__main__':
                 top_ports_count = 1000
 
             port_list = []
-            ports_str = params.get("portscan").get("ports")
+            ports_list = params.get("portscan").get("ports")
 
             if params.get("portscan").get("ports") == [] or params.get("portscan").get("ports") is None:
-                ports_str = []
+                ports_list = []
             else:
-                ports_str = params.get("portscan").get("ports")
+                ports_list = params.get("portscan").get("ports")
 
-            for one in ports_str:
+            for one in ports_list:
                 try:
                     if isinstance(one, int):
-                        if one not in port_list and (0 < i <= 65535):
+                        if one not in port_list and (0 < one <= 65535):
                             port_list.append(one)
                     elif len(one.split("-")) == 2:
                         start_port = int(one.split("-")[0])
@@ -429,4 +429,3 @@ if __name__ == '__main__':
         write_finish_flag()
     except Exception as e:
         print(e)
-        pass
