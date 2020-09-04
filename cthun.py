@@ -203,7 +203,7 @@ if __name__ == '__main__':
             for one in ports_str:
                 try:
                     if isinstance(one, int):
-                        if one not in port_list and (0 < i <= 65535):
+                        if one not in port_list and (0 < one <= 65535):
                             port_list.append(one)
                     elif len(one.split("-")) == 2:
                         start_port = int(one.split("-")[0])
