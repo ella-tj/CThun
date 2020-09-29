@@ -3,20 +3,18 @@
   "sockettimeout": 0.2,
   "loadfromhistory": false,
   "portscan": {
-    "run": true,
+    "run": false,
     "ipaddress": [
-      "192.168.146.1-192.168.146.255"
+      "40.125.166.123"
     ],
     "ports": [
-      "21-23",
-      139,
-      445
+      "1-65535"
     ],
-    "topports": 10,
+    "topports": 0,
     "retry": 2
   },
   "netbiosscan": {
-    "run": true,
+    "run": false,
     "ipaddress": [
       "192.168.146.1-192.168.146.255"
     ]
@@ -36,7 +34,7 @@
     ]
   },
   "bruteforce": {
-    "run": true,
+    "run": false,
     "smb": [
       "192.168.146.130-192.168.146.140"
     ],
@@ -72,12 +70,12 @@
     ]
   },
   "vulscan": {
-    "run": false,
+    "run": true,
     "smb": [
       "192.168.3.11:445"
     ],
     "http": [
-      "192.168.3.10:82"
+      "192.168.146.10:8080"
     ],
     "https": [
       "192.168.146.10:443"

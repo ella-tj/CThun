@@ -80,6 +80,14 @@ def http_scan(url):
     except Exception as E:
         pass
 
+    try:
+        s = WeakPassword(url)
+        if s.check():
+            format_str = "{:<25} VULNERABLE to WeakPassword".format(url)
+            logger.warning(format_str)
+    except Exception as E:
+        pass
+
     # weblogic
     try:
         s = CVE_2017_10271(url)

@@ -419,7 +419,7 @@ if __name__ == '__main__':
 
                 vulscan_interface(portScan_result_list=portScan_result_list, timeout=timeout, pool=pool)
                 t4 = time.time()
-                logger.info("Netbios Scan finish,time use : {}s".format(t4 - t3))
+                logger.info("Vulscan Scan finish,time use : {}s".format(t4 - t3))
                 logger.info("----------------- VulScan Finish --------------------")
 
     logger.info("----------------- Progrem Finish -----------------------\n\n")

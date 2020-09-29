@@ -6,6 +6,9 @@
 # @Author: funnywolf
 # @Contact : github.com/FunnyWolf
 
+import base64
+
+from lib.config import log_success
 from vulscan.common import *
 
 
@@ -42,7 +45,45 @@ class CVE_2017_12615(object):
         return self.payload_url[:-1]
 
 
+class WeakPassword(object):
+    def __init__(self, url):
+        self.url = url
+        self.user = ["tomcat", "root", "admin", "Tomcat", "test", "manager"]
+        self.password = ["tomcat", '123456', 'admin', 'root']
+
+    def check(self):
+        for u in self.user:
+            for p in self.password:
+                header = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language': 'zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3',
+                    'Connection': 'close',
+                    'Upgrade-Insecure-Requests': '1',
+                    "Authorization": "Basic " + base64.b64encode(("%s:%s") % (u, p))}
+                try:
+                    Virtual_Host_Manager_url = self.url + "/host-manager/html"
+                    reponse = requests.get(Virtual_Host_Manager_url, timeout=3, headers=header)
+                    if ("Tomcat Virtual Host Manager" in reponse.text):
+                        log_success("Tomcat", Virtual_Host_Manager_url, "", (u, p))
+                        return True
+                except Exception as e:
+                    pass
+
+                try:
+                    Tomcat_Web_Application_Manager_url = self.url + "/manager/html"
+                    reponse = requests.get(Tomcat_Web_Application_Manager_url, timeout=3, headers=header)
+                    if ("Tomcat Web Application Manager" in reponse.text):
+                        log_success("Tomcat", Tomcat_Web_Application_Manager_url, "", (u, p))
+                        return True
+                except Exception as e:
+                    pass
+        return False
+
+
 if __name__ == '__main__':
-    s = CVE_2017_12615("http://192.168.8.110:8080")
+    # s = CVE_2017_12615("http://192.168.8.110:8080")
+    # print(s.check())
+    # print(s.confirm_info())
+    s = WeakPassword("http://192.168.146.10:8080")
     print(s.check())
-    print(s.confirm_info())
