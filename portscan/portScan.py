@@ -139,8 +139,7 @@ class ServiceScan(object):
         return data
 
     def send_udp_request(self, host, port, payload):
-        """Send udp payloads by port number.
-        """
+        """Send udp payloads by port number."""
         data = ''
         try:
             with contextlib.closing(socket.socket(AF_INET, SOCK_DGRAM)) as client:
@@ -156,8 +155,7 @@ class ServiceScan(object):
         return data
 
     def match_probe_pattern(self, data, probe):
-        """Match tcp/udp response based on nmap probe pattern.
-        """
+        """Match tcp/udp response based on nmap probe pattern."""
         nmap_service, nmap_fingerprint = "", {}
 
         if not data:
@@ -215,8 +213,7 @@ class ServiceScan(object):
         return nmap_service, nmap_fingerprint
 
     def match_versioninfo(self, versioninfo):
-        """Match Nmap versioninfo
-        """
+        """Match Nmap versioninfo"""
 
         record = {
             "vendorproductname": [],
@@ -267,24 +264,12 @@ class ServiceScan(object):
         return record
 
     def sort_probes_by_rarity(self, probes):
-        """Sorts by rarity
-        """
+        """Sorts by rarity"""
         newlist = sorted(probes, key=lambda k: k['rarity']['rarity'])
         return newlist
 
     def filter_probes_by_port(self, port, probes):
-        """通过端口号进行过滤,返回强符合的probes和弱符合的probes
-        """
-        # {'match': {'pattern': '^LO_SERVER_VALIDATING_PIN\\n$',
-        #            'service': 'impress-remote',
-        #            'versioninfo': ' p/LibreOffice Impress remote/ '
-        #                           'cpe:/a:libreoffice:libreoffice/'},
-        #  'ports': {'ports': '1599'},
-        #  'probe': {'probename': 'LibreOfficeImpressSCPair',
-        #            'probestring': 'LO_SERVER_CLIENT_PAIR\\nNmap\\n0000\\n\\n',
-        #            'protocol': 'TCP'},
-        #  'rarity': {'rarity': '9'}}
-
+        """通过端口号进行过滤,返回强符合的probes和弱符合的probes"""
         included = []
         excluded = []
 
@@ -309,10 +294,7 @@ class ServiceScan(object):
         return included, excluded
 
     def is_port_in_range(self, port, nmap_port_rule):
-        """Check port if is in nmap port range
-        """
         bret = False
-
         ports = nmap_port_rule.split(',')  # split into serval string parts
         if str(port) in ports:
             bret = True
